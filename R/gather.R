@@ -26,20 +26,28 @@
 #' gather(stocks, stock, price, -time)
 #' stocks %>% gather(stock, price, -time)
 gather <- function(data, key, value, ..., na.rm = FALSE, convert = FALSE) {
-  key_col <- col_name(substitute(key))
-  value_col <- col_name(substitute(value))
-  gather_cols <- dplyr::select_vars(names(data), ...)
+  key_col <- col_name(substitute(key), "key")
+  value_col <- col_name(substitute(value), "value")
+
+  if (n_dots(...) == 0) {
+    gather_cols <- setdiff(names(data), c(key_col, value_col))
+  } else {
+    gather_cols <- unname(dplyr::select_vars(names(data), ...))
+  }
+
 
   gather_(data, key_col, value_col, gather_cols, na.rm = na.rm,
     convert = convert)
 }
+
+n_dots <- function(...) nargs()
 
 #' Gather (standard-evaluation).
 #'
 #' This is a S3 generic.
 #'
 #' @param data A data frame
-#' @param key_var,value_var Strings giving names of key and value columns to
+#' @param key_col,value_col Strings giving names of key and value columns to
 #'   create.
 #' @param gather_cols Character vector giving column names to be gathered into
 #'   pair of key-value columns.
