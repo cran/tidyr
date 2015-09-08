@@ -1,4 +1,4 @@
-## ----, echo = FALSE------------------------------------------------------
+## ---- echo = FALSE-------------------------------------------------------
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 set.seed(1014)
 options(dplyr.print_max = 10)
@@ -10,7 +10,7 @@ preg
 ## ------------------------------------------------------------------------
 read.csv("preg2.csv", stringsAsFactors = FALSE)
 
-## ----, message = FALSE---------------------------------------------------
+## ---- message = FALSE----------------------------------------------------
 library(tidyr)
 library(dplyr)
 preg2 <- preg %>% 
@@ -97,7 +97,7 @@ rank <- billboard3 %>%
   arrange(song_id, date)
 rank
 
-## ----, eval = FALSE------------------------------------------------------
+## ---- eval = FALSE-------------------------------------------------------
 #  library(plyr)
 #  paths <- dir("data", pattern = "\\.csv$", full.names = TRUE)
 #  names(paths) <- basename(paths)

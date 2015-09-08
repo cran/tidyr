@@ -31,8 +31,11 @@ spread <- function(data, key, value, fill = NA, convert = FALSE, drop = TRUE) {
 #'
 #' @param data A data frame.
 #' @param key_col,value_col Strings giving names of key and value cols.
-#' @param fill If there isn't a value for every combination of the other
-#'   variables and the key column, this value will be substituted.
+#' @param fill If set, missing values will be replaced with this value.
+#'   Note that there are two types of missingness in the input: explicit
+#'   missing values (i.e. \code{NA}), and implicit missings, rows that
+#'   simply aren't present. Both types of missing value will be replaced by
+#'   \code{fill}.
 #' @param convert If \code{TRUE}, \code{\link{type.convert}} with
 #'   \code{asis = TRUE} will be run on each of the new columns. This is
 #'   useful if the value column was a mix of variables that was coerced to
@@ -42,6 +45,13 @@ spread <- function(data, key, value, fill = NA, convert = FALSE, drop = TRUE) {
 #' @export
 spread_ <- function(data, key_col, value_col, fill = NA, convert = FALSE,
                     drop = TRUE) {
+  if (!(key_col %in% names(data))) {
+    stop("Key column '", key_col, "' does not exist in input.", call. = FALSE)
+  }
+  if (!(value_col %in% names(data))) {
+    stop("Value column '", value_col, "' does not exist in input.", call. = FALSE)
+  }
+
   UseMethod("spread_")
 }
 
@@ -84,15 +94,14 @@ spread_.data.frame <- function(data, key_col, value_col, fill = NA,
   if (!is.na(fill)) {
     ordered[is.na(ordered)] <- fill
   }
+  if (convert) {
+    ordered <- type.convert(ordered, as.is = TRUE)
+  }
 
   dim(ordered) <- c(attr(row_id, "n"), attr(col_id, "n"))
-  ordered <- as.data.frame.matrix(ordered, stringsAsFactors = FALSE)
   colnames(ordered) <- as.character(col_labels[[1]])
 
-  if (convert) {
-    ordered[] <- lapply(ordered, type.convert, as.is = TRUE)
-  }
-  append_df(row_labels, ordered)
+  append_df(row_labels, matrixToDataFrame(ordered))
 }
 
 #' @export

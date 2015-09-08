@@ -19,6 +19,8 @@ append_col <- function(x, col, name, after = length(x)) {
   append_df(x, setNames(list(col), name), after = after)
 }
 
+compact <- function(x) x[vapply(x, length, integer(1)) > 0]
+
 #' Extract numeric component of variable.
 #'
 #' This uses a regular expression to strip all non-numeric character from
@@ -39,4 +41,21 @@ extract_numeric <- function(x) {
   as.numeric(gsub("[^0-9.-]+", "", as.character(x)))
 }
 
-"%||%" <- function(a, b) if (is.null(a)) b else a
+#' Pipe operator
+#'
+#' See \code{\link[magrittr]{\%>\%}} for more details.
+#'
+#' @name %>%
+#' @rdname pipe
+#' @keywords internal
+#' @export
+#' @importFrom magrittr %>%
+#' @usage lhs \%>\% rhs
+NULL
+
+list_indices <- function(x, max = 20) {
+  if (length(x) > max)
+    x <- c(x[seq_len(max)], "...")
+
+  paste(x, collapse = ", ")
+}

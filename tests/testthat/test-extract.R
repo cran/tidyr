@@ -1,5 +1,4 @@
 context("Extract")
-library(dplyr, warn.conflicts = FALSE)
 
 test_that("default returns first alpha group", {
   df <- data.frame(x = c("a.b", "a.d", "b.c"))
@@ -14,8 +13,16 @@ test_that("can match multiple groups", {
   expect_equal(out$B, c("b", "d", "c"))
 })
 
-test_that("informative error if match fails", {
+test_that("match failures give NAs", {
   df <- data.frame(x = c("a.b", "a"))
+  out <- df %>% extract(x, "a", "(b)")
+  expect_equal(out$a, c("b", NA))
+})
 
-  expect_error(df %>% extract(x, "a", "(b)"), "didn't match at 2")
+test_that("extract keeps characters as character", {
+  df <- dplyr::data_frame(x = "X-1")
+
+  out <- extract(df, x, c("x", "y"), "(.)-(.)", convert = TRUE)
+  expect_equal(out$x, "X")
+  expect_equal(out$y, 1L)
 })
