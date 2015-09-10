@@ -1,9 +1,9 @@
-1d437bdea01cfceb7e73dba5f9498233 *DESCRIPTION
+567d891729116f96afec8462bf21b1e3 *DESCRIPTION
 1734bf7b2a958fa874a85d6417f4a0e0 *LICENSE
 549cf0d0484db436c21a663d2d912947 *NAMESPACE
 da8a753be8f86efd260e8969364a95f5 *R/RcppExports.R
 92bd367124183a5699659ece9657e311 *R/complete.R
-8722d9b0b3368dd40eea302127b02481 *R/expand.R
+1d2e4419eb18f347ac79f48260027999 *R/expand.R
 55873d577aea221dcf18a0827900e36d *R/extract.R
 6f4e6e879b03bffa3dd715378c83eb04 *R/fill.R
 00ec0508179a6b68ed8085ce9df2e038 *R/gather.R
@@ -24,7 +24,7 @@ f3284df0b78edfb5a2c9f5e44cd3bc65 *demo/dadmom.R
 4c61156afe9636ec80849e49fa98a0a3 *demo/so-9684671.R
 c4383a3f9fca197d86b0ae4a22abc79a *inst/doc/tidy-data.R
 d7c5c9f934bcb3bdd4eebba3555407c7 *inst/doc/tidy-data.Rmd
-ed3f4799e8efe4ef93e646c938256699 *inst/doc/tidy-data.html
+80c78119b1cd0e36e0b8c8e572a0464c *inst/doc/tidy-data.html
 16c82737fca4151b4ff86828d2514962 *man/complete.Rd
 c13b61702b148de996f6ee4d51008cfd *man/complete_.Rd
 45a5b9f608db1f8de13dacc4ac2462cf *man/expand.Rd
@@ -42,7 +42,7 @@ fef856e84b205565e308b0baefc89040 *man/fill_.Rd
 5f33184cb877e8f44219a56a664fb95f *man/replace_na.Rd
 c8d33a5ca078b8bc39b322c2406315b9 *man/separate.Rd
 918fd941700fad2f4fe47ba803190099 *man/separate_.Rd
-29098e7d8afe2febc6ea5ab30efe4817 *man/seq_range.Rd
+6fd146b27fa4e3e9870f0ef2c065f6fd *man/seq_range.Rd
 6e7b6828713e64ece44121be1e99eafc *man/spread.Rd
 5fd59e9e4dedf6345b5aaa2aa63f1340 *man/spread_.Rd
 96ca226ae05ce9b714f568c5e11bf80d *man/unite.Rd
@@ -52,14 +52,14 @@ c8d33a5ca078b8bc39b322c2406315b9 *man/separate.Rd
 0c0ab6e17fcd8d98beee899f62f753a9 *src/RcppExports.cpp
 6340fe45e1d325f0738f7172dc8a69ab *src/fill.cpp
 16e3f3ef218c6b77bec0d9bf79c261ad *src/matrixToDataFrame.cpp
-d3f9c089f024c683b0b960723aa5644a *src/melt.cpp
+2147f7f3317ee6c18f6250e84864c380 *src/melt.cpp
 33080ad7daa7a023ac698b40b9d257a4 *src/simplifyPieces.cpp
 14fd04cc33329083bbe4c25bdd2f0531 *tests/testthat.R
 2f799cc0a2d17ed75f9f82245f3af542 *tests/testthat/test-complete.R
 ec8db0a47da1a96bc36186fe7f206525 *tests/testthat/test-expand.R
 5b8814eea7500ae57cbc0749537aaed7 *tests/testthat/test-extract.R
 cc7932b17a83accd8bde7fc4464d5e9f *tests/testthat/test-fill.R
-701956d57fcd97b55f35be7c39c90852 *tests/testthat/test-gather.R
+042c606480670ab9e51296379b99049b *tests/testthat/test-gather.R
 7d16c3f740a6be0b34bef54fcabfef9d *tests/testthat/test-matrixToDataFrame.R
 ad89eef2a995d438782b1853d1af0845 *tests/testthat/test-nest.R
 2f59b8b540340508771fb32c64dabae6 *tests/testthat/test-replace_na.R
