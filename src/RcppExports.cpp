@@ -5,15 +5,25 @@
 
 using namespace Rcpp;
 
-// fillVector
-SEXP fillVector(SEXP x, bool rev);
-RcppExport SEXP tidyr_fillVector(SEXP xSEXP, SEXP revSEXP) {
+// fillDown
+SEXP fillDown(SEXP x);
+RcppExport SEXP tidyr_fillDown(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
-    Rcpp::traits::input_parameter< bool >::type rev(revSEXP);
-    __result = Rcpp::wrap(fillVector(x, rev));
+    __result = Rcpp::wrap(fillDown(x));
+    return __result;
+END_RCPP
+}
+// fillUp
+SEXP fillUp(SEXP x);
+RcppExport SEXP tidyr_fillUp(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< SEXP >::type x(xSEXP);
+    __result = Rcpp::wrap(fillUp(x));
     return __result;
 END_RCPP
 }
@@ -29,8 +39,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // melt_dataframe
-List melt_dataframe(const DataFrame& data, const IntegerVector& id_ind, const IntegerVector& measure_ind, String variable_name, String value_name, SEXP measure_attributes, bool factorsAsStrings, bool valueAsFactor);
-RcppExport SEXP tidyr_melt_dataframe(SEXP dataSEXP, SEXP id_indSEXP, SEXP measure_indSEXP, SEXP variable_nameSEXP, SEXP value_nameSEXP, SEXP measure_attributesSEXP, SEXP factorsAsStringsSEXP, SEXP valueAsFactorSEXP) {
+List melt_dataframe(const DataFrame& data, const IntegerVector& id_ind, const IntegerVector& measure_ind, String variable_name, String value_name, SEXP attrTemplate, bool factorsAsStrings, bool valueAsFactor, bool variableAsFactor);
+RcppExport SEXP tidyr_melt_dataframe(SEXP dataSEXP, SEXP id_indSEXP, SEXP measure_indSEXP, SEXP variable_nameSEXP, SEXP value_nameSEXP, SEXP attrTemplateSEXP, SEXP factorsAsStringsSEXP, SEXP valueAsFactorSEXP, SEXP variableAsFactorSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -39,10 +49,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const IntegerVector& >::type measure_ind(measure_indSEXP);
     Rcpp::traits::input_parameter< String >::type variable_name(variable_nameSEXP);
     Rcpp::traits::input_parameter< String >::type value_name(value_nameSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type measure_attributes(measure_attributesSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type attrTemplate(attrTemplateSEXP);
     Rcpp::traits::input_parameter< bool >::type factorsAsStrings(factorsAsStringsSEXP);
     Rcpp::traits::input_parameter< bool >::type valueAsFactor(valueAsFactorSEXP);
-    __result = Rcpp::wrap(melt_dataframe(data, id_ind, measure_ind, variable_name, value_name, measure_attributes, factorsAsStrings, valueAsFactor));
+    Rcpp::traits::input_parameter< bool >::type variableAsFactor(variableAsFactorSEXP);
+    __result = Rcpp::wrap(melt_dataframe(data, id_ind, measure_ind, variable_name, value_name, attrTemplate, factorsAsStrings, valueAsFactor, variableAsFactor));
     return __result;
 END_RCPP
 }

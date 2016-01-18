@@ -16,7 +16,7 @@
 #' @examples
 #' library(dplyr)
 #' # From http://stackoverflow.com/questions/1181060
-#' stocks <- data.frame(
+#' stocks <- data_frame(
 #'   time = as.Date('2009-01-01') + 0:9,
 #'   X = rnorm(10, 0, 1),
 #'   Y = rnorm(10, 0, 2),
@@ -41,18 +41,19 @@
 #'   group_by(Species) %>%
 #'   slice(1)
 #' mini_iris %>% gather(key = flower_att, value = measurement, -Species)
-gather <- function(data, key, value, ..., na.rm = FALSE, convert = FALSE) {
+gather <- function(data, key, value, ..., na.rm = FALSE, convert = FALSE,
+                   factor_key = FALSE) {
   key_col <- col_name(substitute(key), "key")
   value_col <- col_name(substitute(value), "value")
 
   if (n_dots(...) == 0) {
-    gather_cols <- setdiff(names(data), c(key_col, value_col))
+    gather_cols <- setdiff(colnames(data), c(key_col, value_col))
   } else {
-    gather_cols <- unname(dplyr::select_vars(names(data), ...))
+    gather_cols <- unname(dplyr::select_vars(colnames(data), ...))
   }
 
   gather_(data, key_col, value_col, gather_cols, na.rm = na.rm,
-    convert = convert)
+    convert = convert, factor_key = factor_key)
 }
 
 n_dots <- function(...) nargs()
@@ -71,16 +72,20 @@ n_dots <- function(...) nargs()
 #' @param convert If \code{TRUE} will automatically run
 #'   \code{\link{type.convert}} on the key column. This is useful if the column
 #'   names are actually numeric, integer, or logical.
+#' @param factor_key If \code{FALSE}, the default, the key values will be
+#'   stored as a character vector. If \code{TRUE}, will be stored as a factor,
+#'   which preserves the original ordering of the columns.
 #' @keywords internal
 #' @export
 gather_ <- function(data, key_col, value_col, gather_cols, na.rm = FALSE,
-                     convert = FALSE) {
+                     convert = FALSE, factor_key = FALSE) {
   UseMethod("gather_")
 }
 
 #' @export
 gather_.data.frame <- function(data, key_col, value_col, gather_cols,
-                               na.rm = FALSE, convert = FALSE) {
+                               na.rm = FALSE, convert = FALSE,
+                               factor_key = FALSE) {
   ## Return if we're not doing any gathering
   if (length(gather_cols) == 0) {
     return(data)
@@ -95,18 +100,17 @@ gather_.data.frame <- function(data, key_col, value_col, gather_cols,
 
   ## Get the attributes if common, NULL if not.
   args <- normalize_melt_arguments(data, gather_idx, factorsAsStrings = TRUE)
-  measure.attributes <- args$measure.attributes
-  factorsAsStrings <- args$factorsAsStrings
-  valueAsFactor <- "factor" %in% measure.attributes$class
+  valueAsFactor <- "factor" %in% class(args$attr_template)
 
   df <- melt_dataframe(data,
     id_idx - 1L,
     gather_idx - 1L,
     as.character(key_col),
     as.character(value_col),
-    as.pairlist(measure.attributes),
-    as.logical(factorsAsStrings),
-    as.logical(valueAsFactor)
+    args$attr_template,
+    args$factorsAsStrings,
+    as.logical(valueAsFactor),
+    as.logical(factor_key)
   )
 
   if (na.rm) {
@@ -123,13 +127,19 @@ gather_.data.frame <- function(data, key_col, value_col, gather_cols,
 
 #' @export
 gather_.tbl_df <- function(data, key_col, value_col, gather_cols,
-                           na.rm = FALSE, convert = FALSE) {
+                           na.rm = FALSE, convert = FALSE, factor_key = FALSE) {
   dplyr::tbl_df(NextMethod())
 }
 
 #' @export
+gather_.grouped_df <- function(data, key_col, value_col, gather_cols,
+                               na.rm = FALSE, convert = FALSE, factor_key = FALSE) {
+  regroup(data, NextMethod(), gather_cols)
+}
+
+#' @export
 gather_.tbl_dt <- function(data, key_col, value_col, gather_cols,
-                           na.rm = FALSE, convert = FALSE) {
+                           na.rm = FALSE, convert = FALSE, factor_key = FALSE) {
   dplyr::tbl_dt(NextMethod())
 }
 
@@ -147,11 +157,11 @@ normalize_melt_arguments <- function(data, measure.ind, factorsAsStrings) {
   measure.attrs.equal <- all_identical(measure.attributes)
 
   if (measure.attrs.equal) {
-    measure.attributes <- measure.attributes[[1]]
+    attr_template <- data[[measure.ind[1]]]
   } else {
     warning("attributes are not identical across measure variables; ",
       "they will be dropped", call. = FALSE)
-    measure.attributes <- NULL
+    attr_template <- NULL
   }
 
   if (!factorsAsStrings && !measure.attrs.equal) {
@@ -167,11 +177,11 @@ normalize_melt_arguments <- function(data, measure.ind, factorsAsStrings) {
   }))
 
   if (factorsAsStrings && any.factors) {
-    measure.attributes <- NULL
+    attr_template <- NULL
   }
 
   list(
-    measure.attributes = measure.attributes,
+    attr_template = attr_template,
     factorsAsStrings = factorsAsStrings
   )
 }

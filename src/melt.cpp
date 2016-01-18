@@ -68,7 +68,7 @@ SEXP rep_(SEXP x, int n, std::string var_name) {
 // Optimized factor routine for the case where we want to make
 // a factor from a vector of names -- used for generating the
 // 'variable' column in the melted data.frame
-IntegerVector make_variable_column(CharacterVector x, int nrow) {
+IntegerVector make_variable_column_factor(CharacterVector x, int nrow) {
   IntegerVector output = no_init(x.size() * nrow);
 
   int idx = 0;
@@ -78,6 +78,17 @@ IntegerVector make_variable_column(CharacterVector x, int nrow) {
 
   output.attr("levels") = x;
   output.attr("class") = "factor";
+  return output;
+}
+
+CharacterVector make_variable_column_character(CharacterVector x, int nrow) {
+  CharacterVector output = no_init(x.size() * nrow);
+
+  int idx = 0;
+  for (int i = 0; i < x.size(); ++i)
+    for (int j = 0; j < nrow; ++j)
+      output[idx++] = x[i];
+
   return output;
 }
 
@@ -155,9 +166,10 @@ List melt_dataframe(const DataFrame& data,
                     const IntegerVector& measure_ind,
                     String variable_name,
                     String value_name,
-                    SEXP measure_attributes,
+                    SEXP attrTemplate,
                     bool factorsAsStrings,
-                    bool valueAsFactor) {
+                    bool valueAsFactor,
+                    bool variableAsFactor) {
 
   int nrow = data.nrows();
 
@@ -197,17 +209,16 @@ List melt_dataframe(const DataFrame& data,
   for (int i = 0; i < n_measure; ++i) {
     id_names[i] = data_names[measure_ind[i]];
   }
-  output[n_id] = make_variable_column(id_names, nrow);
+  if (variableAsFactor) {
+    output[n_id] = make_variable_column_factor(id_names, nrow);
+  } else {
+    output[n_id] = make_variable_column_character(id_names, nrow);
+  }
 
   // 'value' is made by concatenating each of the 'value' variables
   output[n_id + 1] = concatenate(data, measure_ind, factorsAsStrings);
-  if (!Rf_isNull(measure_attributes)) {
-    SET_ATTRIB(output[n_id + 1], measure_attributes);
-    // we also need to make sure the OBJECT bit is set for other 'object' types
-    // see: http://stackoverflow.com/questions/24059460/melt-data-frame-changes-behavior-how-posixct-columns-are-printed
-    // if we've entered this code block, the measure_attributes has been
-    // populated because all value variables have identical attributes
-    SET_OBJECT(output[n_id + 1], OBJECT(data[measure_ind[0]]));
+  if (!Rf_isNull(attrTemplate)) {
+    Rf_copyMostAttrib(attrTemplate, output[n_id + 1]);
   }
 
   // Make the List more data.frame like

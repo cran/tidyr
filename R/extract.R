@@ -7,6 +7,8 @@
 #' @param col Bare column name.
 #' @export
 #' @inheritParams extract_
+#' @seealso \code{\link{extract_}} for a version that uses regular evaluation
+#'   and is suitable for programming with.
 #' @examples
 #' library(dplyr)
 #' df <- data.frame(x = c(NA, "a-b", "a-d", "b-c", "d-e"))
@@ -73,4 +75,10 @@ extract_.data.frame <- function(data, col, into, regex = "([[:alnum:]]+)",
 extract_.tbl_df <- function(data, col, into, regex = "([[:alnum:]]+)",
                              remove = TRUE, convert = FALSE, ...) {
   dplyr::tbl_df(NextMethod())
+}
+
+#' @export
+extract_.grouped_df <- function(data, col, into, regex = "([[:alnum:]]+)",
+                            remove = TRUE, convert = FALSE, ...) {
+  dplyr::grouped_df(NextMethod(), dplyr::groups(data))
 }

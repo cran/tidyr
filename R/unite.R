@@ -8,6 +8,8 @@
 #'   Select all variables between x and z with \code{x:z}, exclude y with
 #'   \code{-y}. For more options, see the \link[dplyr]{select} documentation.
 #' @seealso \code{\link{separate}()}, the complement.
+#' @seealso \code{\link{unite_}} for a version that uses regular evaluation
+#'   and is suitable for programming with.
 #' @export
 #' @examples
 #' library(dplyr)
@@ -19,7 +21,7 @@
 #'   separate(vs_am, c("vs", "am"))
 unite <- function(data, col, ..., sep = "_", remove = TRUE) {
   col <- col_name(substitute(col))
-  from <- dplyr::select_vars(names(data), ...)
+  from <- dplyr::select_vars(colnames(data), ...)
 
   unite_(data, col, from, sep = sep, remove = remove)
 }
@@ -44,16 +46,22 @@ unite_.data.frame <- function(data, col, from, sep = "_", remove = TRUE) {
   united <- do.call("paste", c(data[from], list(sep = sep)))
 
   first_col <- which(names(data) %in% from)[1]
-  data2 <- append_col(data, united, col, after = first_col - 1)
 
+  data2 <- data
   if (remove) {
     data2 <- data2[setdiff(names(data2), from)]
   }
 
-  data2
+
+  append_col(data2, united, col, after = first_col - 1)
 }
 
 #' @export
 unite_.tbl_df <- function(data, col, from, sep = "_", remove = TRUE) {
   dplyr::tbl_df(NextMethod())
+}
+
+#' @export
+unite_.grouped_df <- function(data, col, from, sep = "_", remove = TRUE) {
+  dplyr::grouped_df(NextMethod(), dplyr::groups(data))
 }

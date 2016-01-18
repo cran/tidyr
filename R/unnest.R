@@ -5,12 +5,11 @@
 #' row must have the same number of entries.
 #'
 #' @inheritParams unnest_
-#' @param ... Specification of columns to nest. Use bare variable names.
-#'   Select all variables between x and z with \code{x:z}, exclude y with
-#'   \code{-y}. For more options, see the \link[dplyr]{select} documentation.
-#'
-#'   If ommitted, defaults to all list-cols.
+#' @param ... Specification of columns to nest. Use bare variable names or
+#'   functions of variables. If omitted, defaults to all list-cols.
 #' @seealso \code{\link{nest}} for the inverse operation.
+#' @seealso \code{\link{unnest_}} for a version that uses regular evaluation
+#'   and is suitable for programming with.
 #' @export
 #' @examples
 #' library(dplyr)
@@ -21,6 +20,10 @@
 #' df %>%
 #'   transform(y = strsplit(y, ",")) %>%
 #'   unnest(y)
+#'
+#' # Or just
+#' df %>%
+#'   unnest(y = strsplit(y, ","))
 #'
 #' # It also works if you have a column that contains other data frames!
 #' df <- data_frame(
@@ -45,14 +48,15 @@
 #' # Nest and unnest are inverses
 #' df <- data.frame(x = c(1, 1, 2), y = 3:1)
 #' df %>% nest(y)
-#' df %>% nest(y) %>% unnest(y)
-unnest <- function(data, ...) {
-  unnest_cols <- unname(dplyr::select_vars(names(data), ...))
-  if (length(unnest_cols) == 0) {
-    unnest_cols <- names(data)[vapply(data, is.list, logical(1))]
+#' df %>% nest(y) %>% unnest()
+unnest <- function(data, ..., .drop = NA) {
+  dots <- lazyeval::lazy_dots(...)
+  if (length(dots) == 0) {
+    list_cols <- names(data)[vapply(data, is.list, logical(1))]
+    dots <- lazyeval::as.lazy_dots(list_cols, env = parent.frame())
   }
 
-  unnest_(data, unnest_cols)
+  unnest_(data, dots, .drop = .drop)
 }
 
 #' Standard-evaluation version of \code{unnest}.
@@ -61,12 +65,18 @@ unnest <- function(data, ...) {
 #'
 #' @param data A data frame.
 #' @param unnest_cols Name of columns that needs to be unnested.
+#' @param .drop Should additional list columns be dropped? By default,
+#'   \code{unnest} will drop them if unnesting the specified columns requires
+#'   the rows to be duplicated.
+#' @keywords internal
 #' @export
-unnest_ <- function(data, unnest_cols) UseMethod("unnest_")
+unnest_ <- function(data, unnest_cols, .drop = NA) {
+  UseMethod("unnest_")
+}
 
 #' @export
-unnest_.data.frame <- function(data, unnest_cols) {
-  nested <- data[unnest_cols]
+unnest_.data.frame <- function(data, unnest_cols, .drop = NA) {
+  nested <- dplyr::transmute_(data, .dots = unnest_cols)
   n <- lapply(nested, function(x) vapply(x, NROW, numeric(1)))
   if (length(unique(n)) != 1) {
     stop("All nested columns must have the same number of elements.",
@@ -74,25 +84,37 @@ unnest_.data.frame <- function(data, unnest_cols) {
   }
 
   types <- vapply(nested, list_col_type, character(1))
-  nested <- split.default(nested, types)
-  if (length(nested$mixed) > 0) {
-    probs <- paste(names(nested$mixed), collapse = ",")
+  nest_types <- split.default(nested, types)
+  if (length(nest_types$mixed) > 0) {
+    probs <- paste(names(nest_types$mixed), collapse = ",")
     stop("Each column must either be a list of vectors or a list of ",
       "data frames [", probs , "]", call. = FALSE)
   }
 
-  unnested_atomic <- lapply(nested$atomic, dplyr::combine)
+  unnested_atomic <- lapply(nest_types$atomic, dplyr::combine)
   if (length(unnested_atomic) > 0)
     unnested_atomic <- dplyr::as_data_frame(unnested_atomic)
 
-  unnested_dataframe <- lapply(nested$dataframe, dplyr::bind_rows)
+  unnested_dataframe <- lapply(nest_types$dataframe, dplyr::bind_rows)
   if (length(unnested_dataframe) > 0)
     unnested_dataframe <- dplyr::bind_cols(unnested_dataframe)
 
-  group_cols <- setdiff(names(data), unnest_cols)
+  # Keep list columns by default, only if the rows aren't expanded
+  if (identical(.drop, NA)) {
+    n_in <- nrow(data)
+    n_out <- nrow(unnested_atomic %||% unnested_dataframe)
+    .drop <- n_out != n_in
+  }
+  if (.drop) {
+    is_atomic <- vapply(data, is.atomic, logical(1))
+    group_cols <- names(data)[is_atomic]
+  } else {
+    group_cols <- names(data)
+  }
+  group_cols <- setdiff(group_cols, names(nested))
+
   rest <- data[rep(1:nrow(data), n[[1]]), group_cols, drop = FALSE]
 
-  # Simplify after https://github.com/hadley/dplyr/issues/1148
   dplyr::bind_cols(compact(list(rest, unnested_atomic, unnested_dataframe)))
 }
 
@@ -110,6 +132,11 @@ list_col_type <- function(x) {
 }
 
 #' @export
-unnest_.tbl_df <- function(data, unnest_cols) {
+unnest_.tbl_df <- function(data, unnest_cols, .drop = NA) {
   dplyr::tbl_df(NextMethod())
+}
+
+#' @export
+unnest_.grouped_df <- function(data, unnest_cols, .drop = NA) {
+  dplyr::grouped_df(dplyr::ungroup(data), dplyr::groups(data))
 }

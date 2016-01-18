@@ -4,8 +4,11 @@
 #' \code{separate()} turns a single character column into multiple columns.
 #'
 #' @param col Bare column name.
-#' @export
 #' @inheritParams separate_
+#' @seealso \code{\link{unite}()}, the complement.
+#' @seealso \code{\link{separate_}} for a version that uses regular evaluation
+#'   and is suitable for programming with.
+#' @export
 #' @examples
 #' library(dplyr)
 #' df <- data.frame(x = c(NA, "a.b", "a.d", "b.c"))
@@ -52,7 +55,7 @@ separate <- function(data, col, into, sep = "[^[:alnum:]]+", remove = TRUE,
 #'   happens when there are too many pieces. There are three valid options:
 #'
 #'   \itemize{
-#'    \item "warn" (the default): emit a waring and drop extra values.
+#'    \item "warn" (the default): emit a warning and drop extra values.
 #'    \item "drop": drop any extra values without a warning.
 #'    \item "merge": only splits at most \code{length(into)} times
 #'   }
@@ -60,7 +63,7 @@ separate <- function(data, col, into, sep = "[^[:alnum:]]+", remove = TRUE,
 #'   happens when there are not enough pieces. There are three valid options:
 #'
 #'   \itemize{
-#'    \item "warn" (the default): emit a waring and fill from the right
+#'    \item "warn" (the default): emit a warning and fill from the right
 #'    \item "right": fill with missing values on the right
 #'    \item "left": fill with missing values on the left
 #'   }
@@ -68,8 +71,7 @@ separate <- function(data, col, into, sep = "[^[:alnum:]]+", remove = TRUE,
 #' @param convert If \code{TRUE}, will run \code{\link{type.convert}} with
 #'   \code{as.is = TRUE} on new columns. This is useful if the component
 #'   columns are integer, numeric or logical.
-#' @param ... Other arguments passed on to \code{\link{strsplit}} to control
-#'   how the regular expression is processed.
+#' @param ... Defunct, will be removed in the next version of the package.
 #' @keywords internal
 #' @export
 separate_ <- function(data, col, into, sep = "[^[:alnum:]]+", remove = TRUE,
@@ -83,6 +85,10 @@ separate_.data.frame <- function(data, col, into, sep = "[^[:alnum:]]+",
                                  extra = "warn", fill = "warn", ...) {
   stopifnot(is.character(col), length(col) == 1)
   value <- as.character(data[[col]])
+
+  if (length(list(...)) != 0) {
+    warning("Using ... for passing arguments to strsplit is defunct.")
+  }
 
   if (is.numeric(sep)) {
     l <- strsep(value, sep)
@@ -111,6 +117,14 @@ separate_.tbl_df <- function(data, col, into, sep = "[^[:alnum:]]+",
                              extra = "warn", fill = "warn", ...) {
   dplyr::tbl_df(NextMethod())
 }
+
+#' @export
+separate_.grouped_df <- function(data, col, into, sep = "[^[:alnum:]]+",
+                                 remove = TRUE, convert = FALSE,
+                                 extra = "warn", fill = "warn", ...) {
+  dplyr::grouped_df(NextMethod(), dplyr::groups(data))
+}
+
 
 
 strsep <- function(x, sep) {
