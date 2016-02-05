@@ -1,6 +1,7 @@
-3190fd5d2d3ec17c0317ec0e63f68297 *DESCRIPTION
+74a6de3cd822d2fb5dd6d1161d489bcd *DESCRIPTION
 1734bf7b2a958fa874a85d6417f4a0e0 *LICENSE
 ed9c688f8b6aa7cee757ddaf46205e95 *NAMESPACE
+6e04d04c083cc0969b19bc50a26432d8 *NEWS.md
 c76bbda6b7e03ff6826bd531284cce9d *R/RcppExports.R
 962c782f9811adad4c371fd951f94a7c *R/complete.R
 51d4521258b9177cb17fbbe7002c30a4 *R/expand.R
@@ -8,7 +9,7 @@ c76bbda6b7e03ff6826bd531284cce9d *R/RcppExports.R
 575ff59fce1df34f9b4205c4f9d1036b *R/fill.R
 79a96d642f384143b05e4686a6dbd543 *R/gather.R
 809a4328168c207f07c27a0a778cd811 *R/id.R
-a91a8fc7005ec2b9241b7fc2442c8963 *R/nest.R
+30ffce451e4919ee846dfdef0117e51d *R/nest.R
 ef5c5aca5529c399890daea51186a0b8 *R/replace_na.R
 b9e5b19096bc7b1bc7981c32f9f683a2 *R/separate.R
 93a92c7b05eb5a3c16cc177079fdb318 *R/seq.R
@@ -17,7 +18,7 @@ b4d82ded8bd168e69591c12102401f1d *R/unite.R
 a10bb6285957a52c4c571a0c4489564c *R/unnest.R
 7cce9c2d5994e709e50844c882ed6db8 *R/utils.R
 5b690b03779e8a18f3c61ba5ace3cedf *README.md
-55d82623c852a824d58e665395190758 *build/vignette.rds
+4adab4194849c391c1393c96d5c09597 *build/vignette.rds
 47346bb16936ae7349adad9ec479c2fa *demo/00Index
 f3284df0b78edfb5a2c9f5e44cd3bc65 *demo/dadmom.R
 71c5308f52549f16675817ba775126d1 *demo/so-15668870.R
@@ -26,7 +27,7 @@ f3284df0b78edfb5a2c9f5e44cd3bc65 *demo/dadmom.R
 4c61156afe9636ec80849e49fa98a0a3 *demo/so-9684671.R
 c4383a3f9fca197d86b0ae4a22abc79a *inst/doc/tidy-data.R
 d7c5c9f934bcb3bdd4eebba3555407c7 *inst/doc/tidy-data.Rmd
-40bc815b1912e539df8453f615ffd862 *inst/doc/tidy-data.html
+544b91e502045214a8b46fe24bee1457 *inst/doc/tidy-data.html
 b27d6f1ca16ea5135c412780f83afa07 *man/complete.Rd
 1307879ff06822f095e5490efaf2399e *man/complete_.Rd
 ea9b2a6239c8c8e982d0c062a743c812 *man/expand.Rd
@@ -63,7 +64,7 @@ ef0a01da9c7cdf08af47e89dcc9ef001 *tests/testthat/test-extract.R
 facec5c2ca8ab3d1e27ad31af213e3ff *tests/testthat/test-fill.R
 aa88b9d1af3305fc496e14de25b1a0b8 *tests/testthat/test-gather.R
 8bca207ae4f6d821867657be9be62dd1 *tests/testthat/test-id.R
-7ad9c4bfbe78d68130af1f60c26bf71e *tests/testthat/test-nest.R
+214b846c3d57c6530ba3877fe9eef0eb *tests/testthat/test-nest.R
 2f59b8b540340508771fb32c64dabae6 *tests/testthat/test-replace_na.R
 ea1d18ee28476f1757a9a907bded3de2 *tests/testthat/test-separate.R
 7d288845f3aefc8eff5c60b65193104c *tests/testthat/test-spread.R
