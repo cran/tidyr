@@ -52,16 +52,16 @@ unite_.data.frame <- function(data, col, from, sep = "_", remove = TRUE) {
     data2 <- data2[setdiff(names(data2), from)]
   }
 
-
   append_col(data2, united, col, after = first_col - 1)
 }
 
 #' @export
 unite_.tbl_df <- function(data, col, from, sep = "_", remove = TRUE) {
-  dplyr::tbl_df(NextMethod())
+  as_data_frame(NextMethod())
 }
 
 #' @export
 unite_.grouped_df <- function(data, col, from, sep = "_", remove = TRUE) {
-  dplyr::grouped_df(NextMethod(), dplyr::groups(data))
+  regroup(NextMethod(), data, if (remove) from)
 }
+

@@ -1,3 +1,54 @@
+# tidyr 0.4.1.9000
+
+## New functions
+
+* `separate_rows()` separates observations with multiple delimited values into
+  separate rows (#69, @aaronwolen).
+
+## Bug fixes and minor improvements
+
+* `complete()` preserves grouping created by dplyr (#168).
+
+* `expand()` (and hence `complete()`) preserves the ordered attribute of 
+  factors (#165).
+
+* `full_seq()` preserve attributes for dates and date/times (#156),
+  and sequences no longer need to start at 0.
+
+* `gather()` can now gather together list columns (#175), and 
+  `gather_.data.frame(na.rm = TRUE)` now only removes missing values
+  if they're actually present (#173).
+
+* `nest()` returns correct output if every variable is nested (#186).
+
+* `separate()` fills from right-to-left (not left-to-right!) when fill = "left"
+  (#170, @dgrtwo).
+  
+* `separate()` and `unite()` now automatically drop removed variables from
+  grouping (#159, #177).
+
+* `spread()` gains a `sep` argument. If not-null, this will name columns
+  as "key<sep>value". Additionally, if sep is `NULL` missing values will be
+  converted to `<NA>` (#68).
+
+* `spread()` works in the presence of list-columns (#199)
+
+* `unnest()` works with non-syntactic names (#190).
+
+* `unnest()` gains a `sep` argument. If non-null, this will rename the 
+  columns of nested data frames to include both the original column name,
+  and the nested column name, separated by `.sep` (#184).
+
+* `unnest()` gains `.id` argument that works the same way as `bind_rows()`.
+  This is useful if you have a named list of data frames or vectors (#125).
+
+* Moved in useful sample datasets from the DSR package.
+
+* Made compatible with both dplyr 0.4 and 0.5.
+
+* tidyr functions that create new columns are more aggresive about re-encoding
+  the column names as UTF-8. 
+
 # tidyr 0.4.1
 
 * Fixed bug in `nest()` where nested data was ending up in the wrong row (#158).

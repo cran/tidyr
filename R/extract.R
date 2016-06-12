@@ -57,7 +57,7 @@ extract_.data.frame <- function(data, col, into, regex = "([[:alnum:]]+)",
   matches <- stringi::stri_match_first_regex(value, regex)[, -1, drop = FALSE]
   # Use as_data_frame post https://github.com/hadley/dplyr/issues/876
   l <- lapply(seq_len(ncol(matches)), function(i) matches[, i])
-  names(l) <- into
+  names(l) <- enc2utf8(into)
 
   if (convert) {
     l[] <- lapply(l, type.convert, as.is = TRUE)
@@ -74,11 +74,11 @@ extract_.data.frame <- function(data, col, into, regex = "([[:alnum:]]+)",
 #' @export
 extract_.tbl_df <- function(data, col, into, regex = "([[:alnum:]]+)",
                              remove = TRUE, convert = FALSE, ...) {
-  dplyr::tbl_df(NextMethod())
+  as_data_frame(NextMethod())
 }
 
 #' @export
 extract_.grouped_df <- function(data, col, into, regex = "([[:alnum:]]+)",
-                            remove = TRUE, convert = FALSE, ...) {
-  dplyr::grouped_df(NextMethod(), dplyr::groups(data))
+                                remove = TRUE, convert = FALSE, ...) {
+  regroup(NextMethod(), data, if (remove) col)
 }

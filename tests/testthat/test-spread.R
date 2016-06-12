@@ -16,7 +16,7 @@ test_that("order doesn't matter", {
 })
 
 test_that("convert turns strings into integers", {
-  df <- dplyr::data_frame(key = "a", value = "1")
+  df <- data_frame(key = "a", value = "1")
   out <- spread(df, key, value, convert = TRUE)
 
   expect_is(out$a, "integer")
@@ -76,10 +76,7 @@ test_that("preserve class of input", {
     y = c("c", "d", "c", "d"),
     z = c("w", "x", "y", "z")
   )
-  dat %>% (dplyr::tbl_df) %>% spread(x, z) %>% expect_is("tbl_df")
-
-  skip_if_not_installed("data.table")
-  dat %>% (dplyr::tbl_dt) %>% spread(x, z) %>% expect_is("tbl_dt")
+  dat %>% as_data_frame %>% spread(x, z) %>% expect_is("tbl_df")
 })
 
 test_that("dates are spread into columns (#62)", {
@@ -148,6 +145,14 @@ test_that("complex values are preserved  (#134)", {
   expect_equal(out2$b, 3:4 + 1i)
 })
 
+test_that("can spread with nested columns", {
+  df <- tibble::data_frame(x = c("a", "a"), y = 1:2, z = list(1:2, 3:5))
+  out <- spread(df, x, y)
+
+  expect_equal(out$a, 1:2)
+  expect_equal(out$z, df$z)
+})
+
 test_that("spread gives one column when no existing non-spread vars", {
   df <- data_frame(
     key = c("a", "b", "c"),
@@ -166,4 +171,15 @@ test_that("grouping vars are kept where possible", {
   df <- data.frame(key = c("a", "b"), value = 1:2)
   out <- df %>% group_by(key) %>% spread(key, value)
   expect_equal(out, data_frame(a = 1L, b = 2L))
+})
+
+
+test_that("col names never contains NA", {
+  df <- data_frame(x = c(1, NA), y = 1:2)
+  df %>%
+    spread(x, y) %>%
+    expect_named(c("1", "<NA>"))
+  df %>%
+    spread(x, y, sep = "_") %>%
+    expect_named(c("x_1", "x_NA"))
 })

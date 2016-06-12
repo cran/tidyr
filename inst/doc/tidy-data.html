@@ -8,9 +8,11 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <meta name="author" content="Hadley Wickham" />
 
-<meta name="date" content="2016-02-05" />
+<meta name="date" content="2016-06-10" />
 
 <title>Tidy data</title>
 
@@ -54,14 +56,10 @@ code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Ann
 code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
 code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
 </style>
-<style type="text/css">
-  pre:not([class]) {
-    background-color: white;
-  }
-</style>
 
 
-<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0A%7D%0Apre%20%7B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
 
 </head>
 
@@ -69,11 +67,11 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 
-<div id="header">
-<h1 class="title">Tidy data</h1>
+
+<h1 class="title toc-ignore">Tidy data</h1>
 <h4 class="author"><em>Hadley Wickham</em></h4>
-<h4 class="date"><em>2016-02-05</em></h4>
-</div>
+<h4 class="date"><em>2016-06-10</em></h4>
+
 
 
 <p>(This is an informal and code heavy version of the full <a href="http://vita.had.co.nz/papers/tidy-data.html">tidy data paper</a>. Please refer to that for more details.)</p>
@@ -166,7 +164,7 @@ pew
 <span class="co">#&gt; Source: local data frame [18 x 11]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;                   religion &lt;$10k $10-20k $20-30k $30-40k $40-50k $50-75k</span>
-<span class="co">#&gt;                      (chr) (int)   (int)   (int)   (int)   (int)   (int)</span>
+<span class="co">#&gt;                      &lt;chr&gt; &lt;int&gt;   &lt;int&gt;   &lt;int&gt;   &lt;int&gt;   &lt;int&gt;   &lt;int&gt;</span>
 <span class="co">#&gt; 1                 Agnostic    27      34      60      81      76     137</span>
 <span class="co">#&gt; 2                  Atheist    12      27      37      52      35      70</span>
 <span class="co">#&gt; 3                 Buddhist    27      21      30      34      33      58</span>
@@ -178,8 +176,8 @@ pew
 <span class="co">#&gt; 9        Jehovah's Witness    20      27      24      24      21      30</span>
 <span class="co">#&gt; 10                  Jewish    19      19      25      25      30      95</span>
 <span class="co">#&gt; ..                     ...   ...     ...     ...     ...     ...     ...</span>
-<span class="co">#&gt; Variables not shown: $75-100k (int), $100-150k (int), &gt;150k (int), Don't</span>
-<span class="co">#&gt;   know/refused (int).</span></code></pre></div>
+<span class="co">#&gt; Variables not shown: $75-100k &lt;int&gt;, $100-150k &lt;int&gt;, &gt;150k &lt;int&gt;, Don't</span>
+<span class="co">#&gt;   know/refused &lt;int&gt;.</span></code></pre></div>
 <p>This dataset has three variables, <code>religion</code>, <code>income</code> and <code>frequency</code>. To tidy it, we need to <strong>gather</strong> the non-variable columns into a two-column key-value pair. This action is often described as making a wide dataset long (or tall), but I’ll avoid those terms because they’re imprecise.</p>
 <p>When gathering variables, we need to provide the name of the new key-value columns to create. The first argument, is the name of the key column, which is the name of the variable defined by the values of the column headings. In this case, it’s <code>income</code>. The second argument is the name of the value column, <code>frequency</code>. The third argument defines the columns to gather, here, every column except religion.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pew %&gt;%
@@ -187,7 +185,7 @@ pew
 <span class="co">#&gt; Source: local data frame [180 x 3]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;                   religion income frequency</span>
-<span class="co">#&gt;                      (chr)  (chr)     (int)</span>
+<span class="co">#&gt;                      &lt;chr&gt;  &lt;chr&gt;     &lt;int&gt;</span>
 <span class="co">#&gt; 1                 Agnostic  &lt;$10k        27</span>
 <span class="co">#&gt; 2                  Atheist  &lt;$10k        12</span>
 <span class="co">#&gt; 3                 Buddhist  &lt;$10k        27</span>
@@ -206,7 +204,7 @@ billboard
 <span class="co">#&gt; Source: local data frame [317 x 81]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;     year         artist                   track  time date.entered   wk1</span>
-<span class="co">#&gt;    (int)          (chr)                   (chr) (chr)        (chr) (int)</span>
+<span class="co">#&gt;    &lt;int&gt;          &lt;chr&gt;                   &lt;chr&gt; &lt;chr&gt;        &lt;chr&gt; &lt;int&gt;</span>
 <span class="co">#&gt; 1   2000          2 Pac Baby Don't Cry (Keep...  4:22   2000-02-26    87</span>
 <span class="co">#&gt; 2   2000        2Ge+her The Hardest Part Of ...  3:15   2000-09-02    91</span>
 <span class="co">#&gt; 3   2000   3 Doors Down              Kryptonite  3:53   2000-04-08    81</span>
@@ -218,19 +216,19 @@ billboard
 <span class="co">#&gt; 9   2000        Aaliyah               Try Again  4:03   2000-03-18    59</span>
 <span class="co">#&gt; 10  2000 Adams, Yolanda           Open My Heart  5:30   2000-08-26    76</span>
 <span class="co">#&gt; ..   ...            ...                     ...   ...          ...   ...</span>
-<span class="co">#&gt; Variables not shown: wk2 (int), wk3 (int), wk4 (int), wk5 (int), wk6</span>
-<span class="co">#&gt;   (int), wk7 (int), wk8 (int), wk9 (int), wk10 (int), wk11 (int), wk12</span>
-<span class="co">#&gt;   (int), wk13 (int), wk14 (int), wk15 (int), wk16 (int), wk17 (int), wk18</span>
-<span class="co">#&gt;   (int), wk19 (int), wk20 (int), wk21 (int), wk22 (int), wk23 (int), wk24</span>
-<span class="co">#&gt;   (int), wk25 (int), wk26 (int), wk27 (int), wk28 (int), wk29 (int), wk30</span>
-<span class="co">#&gt;   (int), wk31 (int), wk32 (int), wk33 (int), wk34 (int), wk35 (int), wk36</span>
-<span class="co">#&gt;   (int), wk37 (int), wk38 (int), wk39 (int), wk40 (int), wk41 (int), wk42</span>
-<span class="co">#&gt;   (int), wk43 (int), wk44 (int), wk45 (int), wk46 (int), wk47 (int), wk48</span>
-<span class="co">#&gt;   (int), wk49 (int), wk50 (int), wk51 (int), wk52 (int), wk53 (int), wk54</span>
-<span class="co">#&gt;   (int), wk55 (int), wk56 (int), wk57 (int), wk58 (int), wk59 (int), wk60</span>
-<span class="co">#&gt;   (int), wk61 (int), wk62 (int), wk63 (int), wk64 (int), wk65 (int), wk66</span>
-<span class="co">#&gt;   (lgl), wk67 (lgl), wk68 (lgl), wk69 (lgl), wk70 (lgl), wk71 (lgl), wk72</span>
-<span class="co">#&gt;   (lgl), wk73 (lgl), wk74 (lgl), wk75 (lgl), wk76 (lgl).</span></code></pre></div>
+<span class="co">#&gt; Variables not shown: wk2 &lt;int&gt;, wk3 &lt;int&gt;, wk4 &lt;int&gt;, wk5 &lt;int&gt;, wk6</span>
+<span class="co">#&gt;   &lt;int&gt;, wk7 &lt;int&gt;, wk8 &lt;int&gt;, wk9 &lt;int&gt;, wk10 &lt;int&gt;, wk11 &lt;int&gt;, wk12</span>
+<span class="co">#&gt;   &lt;int&gt;, wk13 &lt;int&gt;, wk14 &lt;int&gt;, wk15 &lt;int&gt;, wk16 &lt;int&gt;, wk17 &lt;int&gt;, wk18</span>
+<span class="co">#&gt;   &lt;int&gt;, wk19 &lt;int&gt;, wk20 &lt;int&gt;, wk21 &lt;int&gt;, wk22 &lt;int&gt;, wk23 &lt;int&gt;, wk24</span>
+<span class="co">#&gt;   &lt;int&gt;, wk25 &lt;int&gt;, wk26 &lt;int&gt;, wk27 &lt;int&gt;, wk28 &lt;int&gt;, wk29 &lt;int&gt;, wk30</span>
+<span class="co">#&gt;   &lt;int&gt;, wk31 &lt;int&gt;, wk32 &lt;int&gt;, wk33 &lt;int&gt;, wk34 &lt;int&gt;, wk35 &lt;int&gt;, wk36</span>
+<span class="co">#&gt;   &lt;int&gt;, wk37 &lt;int&gt;, wk38 &lt;int&gt;, wk39 &lt;int&gt;, wk40 &lt;int&gt;, wk41 &lt;int&gt;, wk42</span>
+<span class="co">#&gt;   &lt;int&gt;, wk43 &lt;int&gt;, wk44 &lt;int&gt;, wk45 &lt;int&gt;, wk46 &lt;int&gt;, wk47 &lt;int&gt;, wk48</span>
+<span class="co">#&gt;   &lt;int&gt;, wk49 &lt;int&gt;, wk50 &lt;int&gt;, wk51 &lt;int&gt;, wk52 &lt;int&gt;, wk53 &lt;int&gt;, wk54</span>
+<span class="co">#&gt;   &lt;int&gt;, wk55 &lt;int&gt;, wk56 &lt;int&gt;, wk57 &lt;int&gt;, wk58 &lt;int&gt;, wk59 &lt;int&gt;, wk60</span>
+<span class="co">#&gt;   &lt;int&gt;, wk61 &lt;int&gt;, wk62 &lt;int&gt;, wk63 &lt;int&gt;, wk64 &lt;int&gt;, wk65 &lt;int&gt;, wk66</span>
+<span class="co">#&gt;   &lt;lgl&gt;, wk67 &lt;lgl&gt;, wk68 &lt;lgl&gt;, wk69 &lt;lgl&gt;, wk70 &lt;lgl&gt;, wk71 &lt;lgl&gt;, wk72</span>
+<span class="co">#&gt;   &lt;lgl&gt;, wk73 &lt;lgl&gt;, wk74 &lt;lgl&gt;, wk75 &lt;lgl&gt;, wk76 &lt;lgl&gt;.</span></code></pre></div>
 <p>To tidy this dataset, we first gather together all the <code>wk</code> columns. The column names give the <code>week</code> and the values are the <code>rank</code>s:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">billboard2 &lt;-<span class="st"> </span>billboard %&gt;%<span class="st"> </span>
 <span class="st">  </span><span class="kw">gather</span>(week, rank, wk1:wk76, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)
@@ -238,7 +236,7 @@ billboard2
 <span class="co">#&gt; Source: local data frame [5,307 x 7]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;     year         artist                   track  time date.entered  week</span>
-<span class="co">#&gt;    (int)          (chr)                   (chr) (chr)        (chr) (chr)</span>
+<span class="co">#&gt; *  &lt;int&gt;          &lt;chr&gt;                   &lt;chr&gt; &lt;chr&gt;        &lt;chr&gt; &lt;chr&gt;</span>
 <span class="co">#&gt; 1   2000          2 Pac Baby Don't Cry (Keep...  4:22   2000-02-26   wk1</span>
 <span class="co">#&gt; 2   2000        2Ge+her The Hardest Part Of ...  3:15   2000-09-02   wk1</span>
 <span class="co">#&gt; 3   2000   3 Doors Down              Kryptonite  3:53   2000-04-08   wk1</span>
@@ -250,7 +248,7 @@ billboard2
 <span class="co">#&gt; 9   2000        Aaliyah               Try Again  4:03   2000-03-18   wk1</span>
 <span class="co">#&gt; 10  2000 Adams, Yolanda           Open My Heart  5:30   2000-08-26   wk1</span>
 <span class="co">#&gt; ..   ...            ...                     ...   ...          ...   ...</span>
-<span class="co">#&gt; Variables not shown: rank (int).</span></code></pre></div>
+<span class="co">#&gt; Variables not shown: rank &lt;int&gt;.</span></code></pre></div>
 <p>Here we use <code>na.rm</code> to drop any missing values from the gather columns. In this data, missing values represent weeks that the song wasn’t in the charts, so can be safely dropped.</p>
 <p>In this case it’s also nice to do a little cleaning, converting the week variable to a number, and figuring out the date corresponding to each week on the charts:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">billboard3 &lt;-<span class="st"> </span>billboard2 %&gt;%
@@ -262,7 +260,7 @@ billboard3
 <span class="co">#&gt; Source: local data frame [5,307 x 7]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;     year         artist                   track  time  week  rank</span>
-<span class="co">#&gt;    (int)          (chr)                   (chr) (chr) (dbl) (int)</span>
+<span class="co">#&gt;    &lt;int&gt;          &lt;chr&gt;                   &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;</span>
 <span class="co">#&gt; 1   2000          2 Pac Baby Don't Cry (Keep...  4:22     1    87</span>
 <span class="co">#&gt; 2   2000        2Ge+her The Hardest Part Of ...  3:15     1    91</span>
 <span class="co">#&gt; 3   2000   3 Doors Down              Kryptonite  3:53     1    81</span>
@@ -274,13 +272,13 @@ billboard3
 <span class="co">#&gt; 9   2000        Aaliyah               Try Again  4:03     1    59</span>
 <span class="co">#&gt; 10  2000 Adams, Yolanda           Open My Heart  5:30     1    76</span>
 <span class="co">#&gt; ..   ...            ...                     ...   ...   ...   ...</span>
-<span class="co">#&gt; Variables not shown: date (date).</span></code></pre></div>
+<span class="co">#&gt; Variables not shown: date &lt;date&gt;.</span></code></pre></div>
 <p>Finally, it’s always a good idea to sort the data. We could do it by artist, track and week:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">billboard3 %&gt;%<span class="st"> </span><span class="kw">arrange</span>(artist, track, week)
 <span class="co">#&gt; Source: local data frame [5,307 x 7]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;     year  artist                   track  time  week  rank       date</span>
-<span class="co">#&gt;    (int)   (chr)                   (chr) (chr) (dbl) (int)     (date)</span>
+<span class="co">#&gt;    &lt;int&gt;   &lt;chr&gt;                   &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;     &lt;date&gt;</span>
 <span class="co">#&gt; 1   2000   2 Pac Baby Don't Cry (Keep...  4:22     1    87 2000-02-26</span>
 <span class="co">#&gt; 2   2000   2 Pac Baby Don't Cry (Keep...  4:22     2    82 2000-03-04</span>
 <span class="co">#&gt; 3   2000   2 Pac Baby Don't Cry (Keep...  4:22     3    72 2000-03-11</span>
@@ -297,7 +295,7 @@ billboard3
 <span class="co">#&gt; Source: local data frame [5,307 x 7]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;     year   artist  track  time  week  rank       date</span>
-<span class="co">#&gt;    (int)    (chr)  (chr) (chr) (dbl) (int)     (date)</span>
+<span class="co">#&gt;    &lt;int&gt;    &lt;chr&gt;  &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;     &lt;date&gt;</span>
 <span class="co">#&gt; 1   2000 Lonestar Amazed  4:25     1    81 1999-06-05</span>
 <span class="co">#&gt; 2   2000 Lonestar Amazed  4:25     2    54 1999-06-12</span>
 <span class="co">#&gt; 3   2000 Lonestar Amazed  4:25     3    44 1999-06-19</span>
@@ -318,7 +316,7 @@ tb
 <span class="co">#&gt; Source: local data frame [5,769 x 22]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;     iso2  year   m04  m514  m014 m1524 m2534 m3544 m4554 m5564   m65    mu</span>
-<span class="co">#&gt;    (chr) (int) (int) (int) (int) (int) (int) (int) (int) (int) (int) (int)</span>
+<span class="co">#&gt;    &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;</span>
 <span class="co">#&gt; 1     AD  1989    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA</span>
 <span class="co">#&gt; 2     AD  1990    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA</span>
 <span class="co">#&gt; 3     AD  1991    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA</span>
@@ -330,8 +328,8 @@ tb
 <span class="co">#&gt; 9     AD  1998    NA    NA     0     0     0     1     0     0     0    NA</span>
 <span class="co">#&gt; 10    AD  1999    NA    NA     0     0     0     1     1     0     0    NA</span>
 <span class="co">#&gt; ..   ...   ...   ...   ...   ...   ...   ...   ...   ...   ...   ...   ...</span>
-<span class="co">#&gt; Variables not shown: f04 (int), f514 (int), f014 (int), f1524 (int), f2534</span>
-<span class="co">#&gt;   (int), f3544 (int), f4554 (int), f5564 (int), f65 (int), fu (int).</span></code></pre></div>
+<span class="co">#&gt; Variables not shown: f04 &lt;int&gt;, f514 &lt;int&gt;, f014 &lt;int&gt;, f1524 &lt;int&gt;, f2534</span>
+<span class="co">#&gt;   &lt;int&gt;, f3544 &lt;int&gt;, f4554 &lt;int&gt;, f5564 &lt;int&gt;, f65 &lt;int&gt;, fu &lt;int&gt;.</span></code></pre></div>
 <p>First we gather up the non-variable columns:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tb2 &lt;-<span class="st"> </span>tb %&gt;%<span class="st"> </span>
 <span class="st">  </span><span class="kw">gather</span>(demo, n, -iso2, -year, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)
@@ -339,7 +337,7 @@ tb2
 <span class="co">#&gt; Source: local data frame [35,750 x 4]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;     iso2  year  demo     n</span>
-<span class="co">#&gt;    (chr) (int) (chr) (int)</span>
+<span class="co">#&gt; *  &lt;chr&gt; &lt;int&gt; &lt;chr&gt; &lt;int&gt;</span>
 <span class="co">#&gt; 1     AD  2005   m04     0</span>
 <span class="co">#&gt; 2     AD  2006   m04     0</span>
 <span class="co">#&gt; 3     AD  2008   m04     0</span>
@@ -358,7 +356,7 @@ tb3
 <span class="co">#&gt; Source: local data frame [35,750 x 5]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;     iso2  year   sex   age     n</span>
-<span class="co">#&gt;    (chr) (int) (chr) (chr) (int)</span>
+<span class="co">#&gt; *  &lt;chr&gt; &lt;int&gt; &lt;chr&gt; &lt;chr&gt; &lt;int&gt;</span>
 <span class="co">#&gt; 1     AD  2005     m    04     0</span>
 <span class="co">#&gt; 2     AD  2006     m    04     0</span>
 <span class="co">#&gt; 3     AD  2008     m    04     0</span>
@@ -380,7 +378,7 @@ weather
 <span class="co">#&gt; Source: local data frame [22 x 35]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;         id  year month element    d1    d2    d3    d4    d5    d6    d7</span>
-<span class="co">#&gt;      (chr) (int) (int)   (chr) (dbl) (dbl) (dbl) (dbl) (dbl) (dbl) (dbl)</span>
+<span class="co">#&gt;      &lt;chr&gt; &lt;int&gt; &lt;int&gt;   &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span>
 <span class="co">#&gt; 1  MX17004  2010     1    tmax    NA    NA    NA    NA    NA    NA    NA</span>
 <span class="co">#&gt; 2  MX17004  2010     1    tmin    NA    NA    NA    NA    NA    NA    NA</span>
 <span class="co">#&gt; 3  MX17004  2010     2    tmax    NA  27.3  24.1    NA    NA    NA    NA</span>
@@ -392,10 +390,10 @@ weather
 <span class="co">#&gt; 9  MX17004  2010     5    tmax    NA    NA    NA    NA    NA    NA    NA</span>
 <span class="co">#&gt; 10 MX17004  2010     5    tmin    NA    NA    NA    NA    NA    NA    NA</span>
 <span class="co">#&gt; ..     ...   ...   ...     ...   ...   ...   ...   ...   ...   ...   ...</span>
-<span class="co">#&gt; Variables not shown: d8 (dbl), d9 (lgl), d10 (dbl), d11 (dbl), d12 (lgl),</span>
-<span class="co">#&gt;   d13 (dbl), d14 (dbl), d15 (dbl), d16 (dbl), d17 (dbl), d18 (lgl), d19</span>
-<span class="co">#&gt;   (lgl), d20 (lgl), d21 (lgl), d22 (lgl), d23 (dbl), d24 (lgl), d25 (dbl),</span>
-<span class="co">#&gt;   d26 (dbl), d27 (dbl), d28 (dbl), d29 (dbl), d30 (dbl), d31 (dbl).</span></code></pre></div>
+<span class="co">#&gt; Variables not shown: d8 &lt;dbl&gt;, d9 &lt;lgl&gt;, d10 &lt;dbl&gt;, d11 &lt;dbl&gt;, d12 &lt;lgl&gt;,</span>
+<span class="co">#&gt;   d13 &lt;dbl&gt;, d14 &lt;dbl&gt;, d15 &lt;dbl&gt;, d16 &lt;dbl&gt;, d17 &lt;dbl&gt;, d18 &lt;lgl&gt;, d19</span>
+<span class="co">#&gt;   &lt;lgl&gt;, d20 &lt;lgl&gt;, d21 &lt;lgl&gt;, d22 &lt;lgl&gt;, d23 &lt;dbl&gt;, d24 &lt;lgl&gt;, d25 &lt;dbl&gt;,</span>
+<span class="co">#&gt;   d26 &lt;dbl&gt;, d27 &lt;dbl&gt;, d28 &lt;dbl&gt;, d29 &lt;dbl&gt;, d30 &lt;dbl&gt;, d31 &lt;dbl&gt;.</span></code></pre></div>
 <p>It has variables in individual columns (<code>id</code>, <code>year</code>, <code>month</code>), spread across columns (<code>day</code>, d1-d31) and across rows (<code>tmin</code>, <code>tmax</code>) (minimum and maximum temperature). Months with fewer than 31 days have structural missing values for the last day(s) of the month.</p>
 <p>To tidy this dataset we first gather the day columns:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">weather2 &lt;-<span class="st"> </span>weather %&gt;%
@@ -404,7 +402,7 @@ weather2
 <span class="co">#&gt; Source: local data frame [66 x 6]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;         id  year month element   day value</span>
-<span class="co">#&gt;      (chr) (int) (int)   (chr) (chr) (dbl)</span>
+<span class="co">#&gt; *    &lt;chr&gt; &lt;int&gt; &lt;int&gt;   &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;</span>
 <span class="co">#&gt; 1  MX17004  2010    12    tmax    d1  29.9</span>
 <span class="co">#&gt; 2  MX17004  2010    12    tmin    d1  13.8</span>
 <span class="co">#&gt; 3  MX17004  2010     2    tmax    d2  27.3</span>
@@ -426,7 +424,7 @@ weather3
 <span class="co">#&gt; Source: local data frame [66 x 6]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;         id  year month   day element value</span>
-<span class="co">#&gt;      (chr) (int) (int) (dbl)   (chr) (dbl)</span>
+<span class="co">#&gt;      &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;dbl&gt;   &lt;chr&gt; &lt;dbl&gt;</span>
 <span class="co">#&gt; 1  MX17004  2010     1    30    tmax  27.8</span>
 <span class="co">#&gt; 2  MX17004  2010     1    30    tmin  14.5</span>
 <span class="co">#&gt; 3  MX17004  2010     2     2    tmax  27.3</span>
@@ -443,7 +441,7 @@ weather3
 <span class="co">#&gt; Source: local data frame [33 x 6]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;         id  year month   day  tmax  tmin</span>
-<span class="co">#&gt;      (chr) (int) (int) (dbl) (dbl) (dbl)</span>
+<span class="co">#&gt; *    &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span>
 <span class="co">#&gt; 1  MX17004  2010     1    30  27.8  14.5</span>
 <span class="co">#&gt; 2  MX17004  2010     2     2  27.3  14.4</span>
 <span class="co">#&gt; 3  MX17004  2010     2     3  24.1  14.4</span>
@@ -470,7 +468,7 @@ song
 <span class="co">#&gt; Source: local data frame [317 x 5]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;            artist                   track  year  time song_id</span>
-<span class="co">#&gt;             (chr)                   (chr) (int) (chr)   (int)</span>
+<span class="co">#&gt;             &lt;chr&gt;                   &lt;chr&gt; &lt;int&gt; &lt;chr&gt;   &lt;int&gt;</span>
 <span class="co">#&gt; 1           2 Pac Baby Don't Cry (Keep...  2000  4:22       1</span>
 <span class="co">#&gt; 2         2Ge+her The Hardest Part Of ...  2000  3:15       2</span>
 <span class="co">#&gt; 3    3 Doors Down              Kryptonite  2000  3:53       3</span>
@@ -491,7 +489,7 @@ rank
 <span class="co">#&gt; Source: local data frame [5,307 x 4]</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt;    song_id       date  week  rank</span>
-<span class="co">#&gt;      (int)     (date) (dbl) (int)</span>
+<span class="co">#&gt;      &lt;int&gt;     &lt;date&gt; &lt;dbl&gt; &lt;int&gt;</span>
 <span class="co">#&gt; 1        1 2000-02-26     1    87</span>
 <span class="co">#&gt; 2        1 2000-03-04     2    82</span>
 <span class="co">#&gt; 3        1 2000-03-11     3    72</span>

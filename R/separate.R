@@ -98,7 +98,7 @@ separate_.data.frame <- function(data, col, into, sep = "[^[:alnum:]]+",
     stop("'sep' must be either numeric or character", .call = FALSE)
   }
 
-  names(l) <- into
+  names(l) <- enc2utf8(into)
   if (convert) {
     l[] <- lapply(l, type.convert, as.is = TRUE)
   }
@@ -115,14 +115,14 @@ separate_.data.frame <- function(data, col, into, sep = "[^[:alnum:]]+",
 separate_.tbl_df <- function(data, col, into, sep = "[^[:alnum:]]+",
                              remove = TRUE, convert = FALSE,
                              extra = "warn", fill = "warn", ...) {
-  dplyr::tbl_df(NextMethod())
+  as_data_frame(NextMethod())
 }
 
 #' @export
 separate_.grouped_df <- function(data, col, into, sep = "[^[:alnum:]]+",
                                  remove = TRUE, convert = FALSE,
                                  extra = "warn", fill = "warn", ...) {
-  dplyr::grouped_df(NextMethod(), dplyr::groups(data))
+  regroup(NextMethod(), data, if (remove) col)
 }
 
 

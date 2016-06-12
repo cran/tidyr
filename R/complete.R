@@ -9,6 +9,9 @@ NULL
 #' \code{\link[dplyr]{left_join}()} and \code{\link{replace_na}} that's
 #' useful for completing missing combinations of data.
 #'
+#' If you supply \code{fill}, these values will also replace existing
+#' explicit missing values in the data set.
+#'
 #' @inheritParams complete_
 #' @inheritParams expand
 #' @seealso \code{\link{complete_}} for a version that uses regular evaluation
@@ -56,4 +59,9 @@ complete_.data.frame <- function(data, cols, fill = list(), ...) {
   full <- replace_na(full, replace = fill)
 
   full
+}
+
+#' @export
+complete_.grouped_df <- function(data, cols, fill = list(), ...) {
+  regroup(NextMethod(), data)
 }

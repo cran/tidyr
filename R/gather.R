@@ -113,7 +113,7 @@ gather_.data.frame <- function(data, key_col, value_col, gather_cols,
     as.logical(factor_key)
   )
 
-  if (na.rm) {
+  if (na.rm && anyNA(df)) {
     missing <- is.na(df[[value_col]])
     df <- df[!missing, ]
   }
@@ -128,21 +128,14 @@ gather_.data.frame <- function(data, key_col, value_col, gather_cols,
 #' @export
 gather_.tbl_df <- function(data, key_col, value_col, gather_cols,
                            na.rm = FALSE, convert = FALSE, factor_key = FALSE) {
-  dplyr::tbl_df(NextMethod())
+  as_data_frame(NextMethod())
 }
 
 #' @export
 gather_.grouped_df <- function(data, key_col, value_col, gather_cols,
                                na.rm = FALSE, convert = FALSE, factor_key = FALSE) {
-  regroup(data, NextMethod(), gather_cols)
+  regroup(NextMethod(), data, gather_cols)
 }
-
-#' @export
-gather_.tbl_dt <- function(data, key_col, value_col, gather_cols,
-                           na.rm = FALSE, convert = FALSE, factor_key = FALSE) {
-  dplyr::tbl_dt(NextMethod())
-}
-
 
 # Functions from reshape2 -------------------------------------------------
 
