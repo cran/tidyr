@@ -1,7 +1,7 @@
-172c516fdcce7a746380a13ef4e7a363 *DESCRIPTION
+d62b7cdf76ba670e1005cc5b9f437507 *DESCRIPTION
 1734bf7b2a958fa874a85d6417f4a0e0 *LICENSE
 73f02609416c55738753c66645c95496 *NAMESPACE
-6a4471dedb4e6a5cb3334b0359856d26 *NEWS.md
+c938282278dcbfdddeb4c8789996b880 *NEWS.md
 176a0155cef3d0ce6556e7a4043e2fc0 *R/RcppExports.R
 d81e363a14c674d1d0f7a784c1642e8f *R/complete.R
 3ef08a85bb21b41e0e283bf62af2964a *R/data.R
@@ -15,7 +15,7 @@ bfafd89382c2c46dfeb755b2ca83ae00 *R/replace_na.R
 cb6bfff8a7400aa2f7c7d45c76406a62 *R/separate-rows.R
 0679452bd8125ade900820ee0b7f8282 *R/separate.R
 cf4d1c456a18889e7dfcdeb0f50ae58a *R/seq.R
-6f2cadd9bc4004bd8eb1a6e50cde841d *R/spread.R
+3575bb95e32986bb6d3f2c5d3fc3bf9d *R/spread.R
 01f8ccb33ba3d65f025113f5a6500eaf *R/unite.R
 281f41ae4f74cb2e9ead977f22623375 *R/unnest.R
 a92c7fe9a0b33581a1f985a8cd4aaa4e *R/utils.R
@@ -38,7 +38,7 @@ f3284df0b78edfb5a2c9f5e44cd3bc65 *demo/dadmom.R
 4c61156afe9636ec80849e49fa98a0a3 *demo/so-9684671.R
 c4383a3f9fca197d86b0ae4a22abc79a *inst/doc/tidy-data.R
 d7c5c9f934bcb3bdd4eebba3555407c7 *inst/doc/tidy-data.Rmd
-818713fd714adf88caca0643be86770b *inst/doc/tidy-data.html
+d43e9ca65721d848c28102fb8fcb6b3f *inst/doc/tidy-data.html
 7b912e9e9388b77c8e00f2196065957b *man/complete.Rd
 1307879ff06822f095e5490efaf2399e *man/complete_.Rd
 ea9b2a6239c8c8e982d0c062a743c812 *man/expand.Rd
