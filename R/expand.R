@@ -23,8 +23,13 @@
 #'   \code{expand(df, nesting(school_id, student_id), date)} would produce
 #'   a row for every student for each date.
 #'
-#'   To fill in values that are missing altogether, use expressions like
+#'   For factors, the full set of levels (not just those that appear in the
+#'   data) are used. For continuous variables, you may need to fill in values
+#'   that don't appear in the data: to do so use expressions like
 #'   \code{year = 2010:2020} or \code{year = \link{full_seq}(year)}.
+#'
+#'   Length-zero (empty) elements are automatically dropped.
+#' @param x For \code{nesting_} and \code{crossing_} a list of variables.
 #' @seealso \code{\link{complete}} for a common application of \code{expand}:
 #'   completing a data frame with missing combinations.
 #' @seealso \code{\link{expand_}} for a version that uses regular evaluation
@@ -72,7 +77,7 @@
 #'
 #' # And use right_join to add in the appropriate missing values to the
 #' # original data
-#' all %>% right_join(experiment)
+#' experiment %>% right_join(all)
 #' # Or use the complete() short-hand
 #' experiment %>% complete(nesting(name, trt), rep)
 expand <- function(data, ...) {
@@ -120,20 +125,14 @@ expand_.grouped_df <- function(data, dots, ...) {
 #' @export
 #' @rdname expand
 crossing <- function(...) {
-  crossing_(list(...))
+  crossing_(tibble::lst(...))
 }
 
 #' @export
 #' @rdname expand
-#' @importFrom tibble data_frame
-nesting <- function(...) {
-  df <- data_frame(...)
-  df <- dplyr::distinct(df)
-  df[do.call(order, df), , drop = FALSE]
-}
-
 crossing_ <- function(x) {
   stopifnot(is.list(x))
+  x <- drop_empty(x)
 
   is_atomic <- vapply(x, is.atomic, logical(1))
   is_df <- vapply(x, is.data.frame, logical(1))
@@ -146,7 +145,7 @@ crossing_ <- function(x) {
     )
   }
 
-  # turn each data frame into single column data frame
+  # turn each atomic vector into single column data frame
   col_df <- lapply(x[is_atomic], function(x) data_frame(x = ulevels(x)))
   col_df <- Map(setNames, col_df, names(x)[is_atomic])
   x[is_atomic] <- col_df
@@ -160,3 +159,26 @@ cross_df <- function(x, y) {
   dplyr::bind_cols(x[x_idx, , drop = FALSE], y[y_idx, , drop = FALSE])
 }
 
+
+#' @export
+#' @rdname expand
+#' @importFrom tibble data_frame
+nesting <- function(...) {
+  nesting_(tibble::lst(...))
+}
+
+#' @export
+#' @rdname expand
+nesting_ <- function(x) {
+  stopifnot(is.list(x))
+  x <- drop_empty(x)
+
+  df <- as_data_frame(x)
+  df <- dplyr::distinct(df)
+  df[do.call(order, df), , drop = FALSE]
+}
+
+drop_empty <- function(x) {
+  empty <- vapply(x, function(x) length(x) == 0, logical(1))
+  x[!empty]
+}

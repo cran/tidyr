@@ -1,3 +1,26 @@
+# tidyr 0.6.0
+
+## API changes
+
+* `drop_na()` removes observations which have `NA` in the given variables. If no
+  variables are given, all variables are considered (#194, @janschulz).
+
+* `extract_numeric()` has been deprecated (#213).
+
+* Renamed `table4` and `table5` to `table4a` and `table4b` to make their
+  connection more clear. The `key` and `value` variables in `table2` have 
+  been renamed to `type` and `count`.
+
+## Bug fixes and minor improvements
+
+* `expand()`, `crossing()`, and `nesting()` now silently drop zero-length
+  inputs.
+  
+* `crossing_()` and `nesting_()` are versions of `crossing()` and `nesting()`
+  that take a list as input.
+
+* `full_seq()` works correctly for dates and date/times.
+
 # tidyr 0.5.1
 
 * Restored compatibility with R < 3.3.0 by avoiding `getS3method(envir = )` (#205, @krlmlr).

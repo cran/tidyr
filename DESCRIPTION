@@ -1,6 +1,6 @@
 Package: tidyr
 Title: Easily Tidy Data with `spread()` and `gather()` Functions
-Version: 0.5.1
+Version: 0.6.0
 Authors@R: c(
     person("Hadley", "Wickham", , "hadley@rstudio.com", c("aut", "cre")),
     person("RStudio", role = "cph")
@@ -19,9 +19,9 @@ VignetteBuilder: knitr
 LinkingTo: Rcpp
 RoxygenNote: 5.0.1
 NeedsCompilation: yes
-Packaged: 2016-06-14 12:40:46 UTC; hadley
+Packaged: 2016-08-11 22:23:45 UTC; hadley
 Author: Hadley Wickham [aut, cre],
   RStudio [cph]
 Maintainer: Hadley Wickham <hadley@rstudio.com>
 Repository: CRAN
-Date/Publication: 2016-06-14 15:22:49
+Date/Publication: 2016-08-12 10:20:52
