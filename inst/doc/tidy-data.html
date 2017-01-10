@@ -12,7 +12,7 @@
 
 <meta name="author" content="Hadley Wickham" />
 
-<meta name="date" content="2016-08-11" />
+<meta name="date" content="2017-01-09" />
 
 <title>Tidy data</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Tidy data</h1>
 <h4 class="author"><em>Hadley Wickham</em></h4>
-<h4 class="date"><em>2016-08-11</em></h4>
+<h4 class="date"><em>2017-01-09</em></h4>
 
 
 
@@ -161,7 +161,7 @@ preg2
 <p>The following code shows a subset of a typical dataset of this form. This dataset explores the relationship between income and religion in the US. It comes from a report<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> produced by the Pew Research Center, an American think-tank that collects data on attitudes to topics ranging from religion to the internet, and produces many reports that contain datasets in this format.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pew &lt;-<span class="st"> </span><span class="kw">tbl_df</span>(<span class="kw">read.csv</span>(<span class="st">&quot;pew.csv&quot;</span>, <span class="dt">stringsAsFactors =</span> <span class="ot">FALSE</span>, <span class="dt">check.names =</span> <span class="ot">FALSE</span>))
 pew
-<span class="co">#&gt; # A tibble: 18 x 11</span>
+<span class="co">#&gt; # A tibble: 18 × 11</span>
 <span class="co">#&gt;                   religion `&lt;$10k` `$10-20k` `$20-30k` `$30-40k` `$40-50k`</span>
 <span class="co">#&gt;                      &lt;chr&gt;   &lt;int&gt;     &lt;int&gt;     &lt;int&gt;     &lt;int&gt;     &lt;int&gt;</span>
 <span class="co">#&gt; 1                 Agnostic      27        34        60        81        76</span>
@@ -181,7 +181,7 @@ pew
 <p>When gathering variables, we need to provide the name of the new key-value columns to create. The first argument, is the name of the key column, which is the name of the variable defined by the values of the column headings. In this case, it’s <code>income</code>. The second argument is the name of the value column, <code>frequency</code>. The third argument defines the columns to gather, here, every column except religion.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pew %&gt;%
 <span class="st">  </span><span class="kw">gather</span>(income, frequency, -religion)
-<span class="co">#&gt; # A tibble: 180 x 3</span>
+<span class="co">#&gt; # A tibble: 180 × 3</span>
 <span class="co">#&gt;                   religion income frequency</span>
 <span class="co">#&gt;                      &lt;chr&gt;  &lt;chr&gt;     &lt;int&gt;</span>
 <span class="co">#&gt; 1                 Agnostic  &lt;$10k        27</span>
@@ -199,7 +199,7 @@ pew
 <p>This format is also used to record regularly spaced observations over time. For example, the Billboard dataset shown below records the date a song first entered the billboard top 100. It has variables for <code>artist</code>, <code>track</code>, <code>date.entered</code>, <code>rank</code> and <code>week</code>. The rank in each week after it enters the top 100 is recorded in 75 columns, <code>wk1</code> to <code>wk75</code>. This form of storage is not tidy, but it is useful for data entry. It reduces duplication since otherwise each song in each week would need its own row, and song metadata like title and artist would need to be repeated. This will be discussed in more depth in (multiple types)[#multiple-types].</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">billboard &lt;-<span class="st"> </span><span class="kw">tbl_df</span>(<span class="kw">read.csv</span>(<span class="st">&quot;billboard.csv&quot;</span>, <span class="dt">stringsAsFactors =</span> <span class="ot">FALSE</span>))
 billboard
-<span class="co">#&gt; # A tibble: 317 x 81</span>
+<span class="co">#&gt; # A tibble: 317 × 81</span>
 <span class="co">#&gt;     year         artist                   track  time date.entered   wk1</span>
 <span class="co">#&gt;    &lt;int&gt;          &lt;chr&gt;                   &lt;chr&gt; &lt;chr&gt;        &lt;chr&gt; &lt;int&gt;</span>
 <span class="co">#&gt; 1   2000          2 Pac Baby Don't Cry (Keep...  4:22   2000-02-26    87</span>
@@ -232,7 +232,7 @@ billboard
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">billboard2 &lt;-<span class="st"> </span>billboard %&gt;%<span class="st"> </span>
 <span class="st">  </span><span class="kw">gather</span>(week, rank, wk1:wk76, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)
 billboard2
-<span class="co">#&gt; # A tibble: 5,307 x 7</span>
+<span class="co">#&gt; # A tibble: 5,307 × 7</span>
 <span class="co">#&gt;     year         artist                   track  time date.entered  week</span>
 <span class="co">#&gt; *  &lt;int&gt;          &lt;chr&gt;                   &lt;chr&gt; &lt;chr&gt;        &lt;chr&gt; &lt;chr&gt;</span>
 <span class="co">#&gt; 1   2000          2 Pac Baby Don't Cry (Keep...  4:22   2000-02-26   wk1</span>
@@ -253,9 +253,9 @@ billboard2
     <span class="dt">week =</span> <span class="kw">extract_numeric</span>(week),
     <span class="dt">date =</span> <span class="kw">as.Date</span>(date.entered) +<span class="st"> </span><span class="dv">7</span> *<span class="st"> </span>(week -<span class="st"> </span><span class="dv">1</span>)) %&gt;%
 <span class="st">  </span><span class="kw">select</span>(-date.entered)
-<span class="co">#&gt; extract_numeric() is deprecated: please use readr::parse_numeric() instead</span>
+<span class="co">#&gt; extract_numeric() is deprecated: please use readr::parse_number() instead</span>
 billboard3
-<span class="co">#&gt; # A tibble: 5,307 x 7</span>
+<span class="co">#&gt; # A tibble: 5,307 × 7</span>
 <span class="co">#&gt;     year         artist                   track  time  week  rank</span>
 <span class="co">#&gt;    &lt;int&gt;          &lt;chr&gt;                   &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;</span>
 <span class="co">#&gt; 1   2000          2 Pac Baby Don't Cry (Keep...  4:22     1    87</span>
@@ -271,7 +271,7 @@ billboard3
 <span class="co">#&gt; # ... with 5,297 more rows, and 1 more variables: date &lt;date&gt;</span></code></pre></div>
 <p>Finally, it’s always a good idea to sort the data. We could do it by artist, track and week:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">billboard3 %&gt;%<span class="st"> </span><span class="kw">arrange</span>(artist, track, week)
-<span class="co">#&gt; # A tibble: 5,307 x 7</span>
+<span class="co">#&gt; # A tibble: 5,307 × 7</span>
 <span class="co">#&gt;     year  artist                   track  time  week  rank       date</span>
 <span class="co">#&gt;    &lt;int&gt;   &lt;chr&gt;                   &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;     &lt;date&gt;</span>
 <span class="co">#&gt; 1   2000   2 Pac Baby Don't Cry (Keep...  4:22     1    87 2000-02-26</span>
@@ -287,7 +287,7 @@ billboard3
 <span class="co">#&gt; # ... with 5,297 more rows</span></code></pre></div>
 <p>Or by date and rank:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">billboard3 %&gt;%<span class="st"> </span><span class="kw">arrange</span>(date, rank)
-<span class="co">#&gt; # A tibble: 5,307 x 7</span>
+<span class="co">#&gt; # A tibble: 5,307 × 7</span>
 <span class="co">#&gt;     year   artist  track  time  week  rank       date</span>
 <span class="co">#&gt;    &lt;int&gt;    &lt;chr&gt;  &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt; &lt;int&gt;     &lt;date&gt;</span>
 <span class="co">#&gt; 1   2000 Lonestar Amazed  4:25     1    81 1999-06-05</span>
@@ -307,7 +307,7 @@ billboard3
 <p>After gathering columns, the key column is sometimes a combination of multiple underlying variable names. This happens in the <code>tb</code> (tuberculosis) dataset, shown below. This dataset comes from the World Health Organisation, and records the counts of confirmed tuberculosis cases by <code>country</code>, <code>year</code>, and demographic group. The demographic groups are broken down by <code>sex</code> (m, f) and <code>age</code> (0-14, 15-25, 25-34, 35-44, 45-54, 55-64, unknown).</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tb &lt;-<span class="st"> </span><span class="kw">tbl_df</span>(<span class="kw">read.csv</span>(<span class="st">&quot;tb.csv&quot;</span>, <span class="dt">stringsAsFactors =</span> <span class="ot">FALSE</span>))
 tb
-<span class="co">#&gt; # A tibble: 5,769 x 22</span>
+<span class="co">#&gt; # A tibble: 5,769 × 22</span>
 <span class="co">#&gt;     iso2  year   m04  m514  m014 m1524 m2534 m3544 m4554 m5564   m65    mu</span>
 <span class="co">#&gt;    &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;</span>
 <span class="co">#&gt; 1     AD  1989    NA    NA    NA    NA    NA    NA    NA    NA    NA    NA</span>
@@ -327,7 +327,7 @@ tb
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tb2 &lt;-<span class="st"> </span>tb %&gt;%<span class="st"> </span>
 <span class="st">  </span><span class="kw">gather</span>(demo, n, -iso2, -year, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)
 tb2
-<span class="co">#&gt; # A tibble: 35,750 x 4</span>
+<span class="co">#&gt; # A tibble: 35,750 × 4</span>
 <span class="co">#&gt;     iso2  year  demo     n</span>
 <span class="co">#&gt; *  &lt;chr&gt; &lt;int&gt; &lt;chr&gt; &lt;int&gt;</span>
 <span class="co">#&gt; 1     AD  2005   m04     0</span>
@@ -345,7 +345,7 @@ tb2
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tb3 &lt;-<span class="st"> </span>tb2 %&gt;%<span class="st"> </span>
 <span class="st">  </span><span class="kw">separate</span>(demo, <span class="kw">c</span>(<span class="st">&quot;sex&quot;</span>, <span class="st">&quot;age&quot;</span>), <span class="dv">1</span>)
 tb3
-<span class="co">#&gt; # A tibble: 35,750 x 5</span>
+<span class="co">#&gt; # A tibble: 35,750 × 5</span>
 <span class="co">#&gt;     iso2  year   sex   age     n</span>
 <span class="co">#&gt; *  &lt;chr&gt; &lt;int&gt; &lt;chr&gt; &lt;chr&gt; &lt;int&gt;</span>
 <span class="co">#&gt; 1     AD  2005     m    04     0</span>
@@ -366,7 +366,7 @@ tb3
 <p>The most complicated form of messy data occurs when variables are stored in both rows and columns. The code below loads daily weather data from the Global Historical Climatology Network for one weather station (MX17004) in Mexico for five months in 2010.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">weather &lt;-<span class="st"> </span><span class="kw">tbl_df</span>(<span class="kw">read.csv</span>(<span class="st">&quot;weather.csv&quot;</span>, <span class="dt">stringsAsFactors =</span> <span class="ot">FALSE</span>))
 weather
-<span class="co">#&gt; # A tibble: 22 x 35</span>
+<span class="co">#&gt; # A tibble: 22 × 35</span>
 <span class="co">#&gt;         id  year month element    d1    d2    d3    d4    d5    d6    d7</span>
 <span class="co">#&gt;      &lt;chr&gt; &lt;int&gt; &lt;int&gt;   &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span>
 <span class="co">#&gt; 1  MX17004  2010     1    tmax    NA    NA    NA    NA    NA    NA    NA</span>
@@ -389,7 +389,7 @@ weather
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">weather2 &lt;-<span class="st"> </span>weather %&gt;%
 <span class="st">  </span><span class="kw">gather</span>(day, value, d1:d31, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)
 weather2
-<span class="co">#&gt; # A tibble: 66 x 6</span>
+<span class="co">#&gt; # A tibble: 66 × 6</span>
 <span class="co">#&gt;         id  year month element   day value</span>
 <span class="co">#&gt; *    &lt;chr&gt; &lt;int&gt; &lt;int&gt;   &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;</span>
 <span class="co">#&gt; 1  MX17004  2010    12    tmax    d1  29.9</span>
@@ -409,9 +409,9 @@ weather2
 <span class="st">  </span><span class="kw">mutate</span>(<span class="dt">day =</span> <span class="kw">extract_numeric</span>(day)) %&gt;%
 <span class="st">  </span><span class="kw">select</span>(id, year, month, day, element, value) %&gt;%
 <span class="st">  </span><span class="kw">arrange</span>(id, year, month, day)
-<span class="co">#&gt; extract_numeric() is deprecated: please use readr::parse_numeric() instead</span>
+<span class="co">#&gt; extract_numeric() is deprecated: please use readr::parse_number() instead</span>
 weather3
-<span class="co">#&gt; # A tibble: 66 x 6</span>
+<span class="co">#&gt; # A tibble: 66 × 6</span>
 <span class="co">#&gt;         id  year month   day element value</span>
 <span class="co">#&gt;      &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;dbl&gt;   &lt;chr&gt; &lt;dbl&gt;</span>
 <span class="co">#&gt; 1  MX17004  2010     1    30    tmax  27.8</span>
@@ -427,7 +427,7 @@ weather3
 <span class="co">#&gt; # ... with 56 more rows</span></code></pre></div>
 <p>This dataset is mostly tidy, but the <code>element</code> column is not a variable; it stores the names of variables. (Not shown in this example are the other meteorological variables <code>prcp</code> (precipitation) and <code>snow</code> (snowfall)). Fixing this requires the spread operation. This performs the inverse of gathering by spreading the <code>element</code> and <code>value</code> columns back out into the columns:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">weather3 %&gt;%<span class="st"> </span><span class="kw">spread</span>(element, value)
-<span class="co">#&gt; # A tibble: 33 x 6</span>
+<span class="co">#&gt; # A tibble: 33 × 6</span>
 <span class="co">#&gt;         id  year month   day  tmax  tmin</span>
 <span class="co">#&gt; *    &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span>
 <span class="co">#&gt; 1  MX17004  2010     1    30  27.8  14.5</span>
@@ -453,7 +453,7 @@ weather3
 <span class="st">  </span><span class="kw">unique</span>() %&gt;%
 <span class="st">  </span><span class="kw">mutate</span>(<span class="dt">song_id =</span> <span class="kw">row_number</span>())
 song
-<span class="co">#&gt; # A tibble: 317 x 5</span>
+<span class="co">#&gt; # A tibble: 317 × 5</span>
 <span class="co">#&gt;            artist                   track  year  time song_id</span>
 <span class="co">#&gt;             &lt;chr&gt;                   &lt;chr&gt; &lt;int&gt; &lt;chr&gt;   &lt;int&gt;</span>
 <span class="co">#&gt; 1           2 Pac Baby Don't Cry (Keep...  2000  4:22       1</span>
@@ -473,7 +473,7 @@ song
 <span class="st">  </span><span class="kw">select</span>(song_id, date, week, rank) %&gt;%
 <span class="st">  </span><span class="kw">arrange</span>(song_id, date)
 rank
-<span class="co">#&gt; # A tibble: 5,307 x 4</span>
+<span class="co">#&gt; # A tibble: 5,307 × 4</span>
 <span class="co">#&gt;    song_id       date  week  rank</span>
 <span class="co">#&gt;      &lt;int&gt;     &lt;date&gt; &lt;dbl&gt; &lt;int&gt;</span>
 <span class="co">#&gt; 1        1 2000-02-26     1    87</span>
