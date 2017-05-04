@@ -1,6 +1,6 @@
 Package: tidyr
 Title: Easily Tidy Data with 'spread()' and 'gather()' Functions
-Version: 0.6.1
+Version: 0.6.2
 Authors@R: c(
     person("Hadley", "Wickham", , "hadley@rstudio.com", c("aut", "cre")),
     person("RStudio", role = "cph")
@@ -15,14 +15,13 @@ Imports: tibble, dplyr (>= 0.4), stringi, lazyeval, magrittr, Rcpp
 URL: http://tidyr.tidyverse.org, https://github.com/tidyverse/tidyr
 BugReports: https://github.com/tidyverse/tidyr/issues
 Suggests: knitr, testthat, covr, gapminder, rmarkdown
-Remotes: RcppCore/Rcpp
 VignetteBuilder: knitr
 LinkingTo: Rcpp
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
 NeedsCompilation: yes
-Packaged: 2017-01-09 23:43:16 UTC; hadley
+Packaged: 2017-05-03 15:57:09 UTC; hadley
 Author: Hadley Wickham [aut, cre],
   RStudio [cph]
 Maintainer: Hadley Wickham <hadley@rstudio.com>
 Repository: CRAN
-Date/Publication: 2017-01-10 10:17:53
+Date/Publication: 2017-05-04 06:46:09 UTC

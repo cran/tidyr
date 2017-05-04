@@ -1,3 +1,11 @@
+# tidyr 0.6.2
+
+* Register C functions
+
+* Added package docs
+
+* Patch tests to be compatible with dev dplyr.
+
 # tidyr 0.6.1
 
 * Patch test to be compatible with dev tibble
