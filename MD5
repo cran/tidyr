@@ -1,7 +1,7 @@
-92dd62922b869175047d34f1994dbe04 *DESCRIPTION
+110e3fbd6905eccb93013d238199ec68 *DESCRIPTION
 1734bf7b2a958fa874a85d6417f4a0e0 *LICENSE
 b39e182b98536220a3034581d1c3ffb0 *NAMESPACE
-99b68a590787329bdcb9f7e623c5882b *NEWS.md
+0c90f1040341483b7060a7e8f2ac9896 *NEWS.md
 954a1ab6fbadfa36af9222a046664143 *R/RcppExports.R
 5a31f386adea19a21327848d831676d3 *R/complete.R
 ab3a1f6c7f05ac4e8f2c2da3b04f46b6 *R/data.R
@@ -22,7 +22,7 @@ a45bfa6ec4e14bc79d293de91b62fd9b *R/tidyr.R
 3db366b7eac86f7c620aef3a96d79b75 *R/unnest.R
 c96c6e51b58acec28e982d9b4a710137 *R/utils.R
 5f0e633bf5cd9c5530214697ddc05449 *README.md
-b503501baf7904cddb1bfc0ecfae62c8 *build/vignette.rds
+f3ddc7c871b6d66ae3817ecfa60d80b3 *build/vignette.rds
 4c2c3340bd4f8199e23710ccef6f1f63 *data/population.rdata
 9676be6a02d57f111e0fff2c0c33b6b6 *data/smiths.rda
 e6228478eb819186592e71cfe1bd76c1 *data/table1.rdata
@@ -81,7 +81,7 @@ e9fa31140b3e8191fc77a1c114d2ad5a *src/melt.cpp
 32534931093398158fef10463826e304 *src/simplifyPieces.cpp
 14fd04cc33329083bbe4c25bdd2f0531 *tests/testthat.R
 01de56d1ccecb5a5146f9376f8592909 *tests/testthat/test-complete.R
-aad28d483bb306f9d89b5a309003facf *tests/testthat/test-drop_na.R
+c3f10bc234e37e87bd2298eac6c9b635 *tests/testthat/test-drop_na.R
 4abc8535438e7b6f9517db46444dd715 *tests/testthat/test-expand.R
 5156e43deafd544e8f607004caef56e9 *tests/testthat/test-extract.R
 dcb1ed9eda37a98a5697b9ec201647a7 *tests/testthat/test-fill.R
