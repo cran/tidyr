@@ -1,7 +1,7 @@
-efc922f9bd9a5c0e189cc4a6e0479c02 *DESCRIPTION
+cde6f0d6d9862ea9c02d7a8f74c2a4ef *DESCRIPTION
 1734bf7b2a958fa874a85d6417f4a0e0 *LICENSE
 3c2147163007eb93226799a3c1b504cb *NAMESPACE
-100d673b9fb8fef29fdad6655b6d96ed *NEWS.md
+7207da2c9eccf02933f1c2943bc529c1 *NEWS.md
 d5af2bc872fd256dd82f2607ea2aff67 *R/RcppExports.R
 79ea586e36b0123e161a26e98bd99b64 *R/compat-lazyeval.R
 61e0ad373cfce05de2c489ef9b60ae19 *R/complete.R
@@ -60,7 +60,7 @@ cf9d82ac4f3b53b032350c96f416380b *man/separate_rows.Rd
 06b27539deeb757867fffeaccc3e6558 *man/smiths.Rd
 8a30ebf5b4f8f9ea6c7c7d935aaebea3 *man/spread.Rd
 d666306ea81966125708a72e36efc617 *man/table1.Rd
-306a77df6abb2512907e4eec0ada9fb4 *man/tidyr-package.Rd
+9746e5d604242d68b24d123d2a5d96d4 *man/tidyr-package.Rd
 c88a0ea47ba7ba780275de638c2936ad *man/unite.Rd
 c8ba478dc1fb90bc2c84ea2e3871bb66 *man/unnest.Rd
 098fdd0edc34de56a2da62f5dd22373a *man/who.Rd
@@ -70,7 +70,7 @@ e9fa31140b3e8191fc77a1c114d2ad5a *src/melt.cpp
 32534931093398158fef10463826e304 *src/simplifyPieces.cpp
 14fd04cc33329083bbe4c25bdd2f0531 *tests/testthat.R
 0596c84dbd8e83646f1ee3e2a798d4f2 *tests/testthat/test-complete.R
-17313df7d3756a255f48c568c9207d72 *tests/testthat/test-drop_na.R
+2e8a9bbcf302cf2b96d9b21baa9a76ee *tests/testthat/test-drop_na.R
 268cd27319e673da4e422e7e2a48a06b *tests/testthat/test-expand.R
 3d4f4ce4fa98d50fade3a2352bb63c33 *tests/testthat/test-extract.R
 52bdaf7932812e1bf7b5b34ae12fc7aa *tests/testthat/test-fill.R
