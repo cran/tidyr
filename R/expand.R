@@ -26,7 +26,7 @@
 #'   For factors, the full set of levels (not just those that appear in the
 #'   data) are used. For continuous variables, you may need to fill in values
 #'   that don't appear in the data: to do so use expressions like
-#'   `year = 2010:2020` or `year = \link{full_seq}(year)`.
+#'   `year = 2010:2020` or `year = \link{full_seq}(year,1)`.
 #'
 #'   Length-zero (empty) elements are automatically dropped.
 #' @seealso [complete()] for a common application of `expand`:
@@ -80,10 +80,7 @@
 expand <- function(data, ...) {
   UseMethod("expand")
 }
-#' @export
-expand.default <- function(data, ...) {
-  expand_(data, .dots = compat_as_lazy_dots(...))
-}
+
 #' @export
 expand.data.frame <- function(data, ...) {
   dots <- quos(..., .named = TRUE)
@@ -102,19 +99,6 @@ expand.grouped_df <- function(data, ...) {
   dplyr::do(data, expand(., !!! dots))
 }
 
-#' @rdname deprecated-se
-#' @param expand_cols Character vector of column names to be expanded.
-#' @export
-expand_ <- function(data, dots, ...) {
-  UseMethod("expand_")
-}
-#' @export
-expand_.data.frame <- function(data, dots, ...) {
-  dots <- compat_lazy_dots(dots, caller_env())
-  expand(data, !!! dots)
-}
-
-
 # Nesting & crossing ------------------------------------------------------
 
 #' @rdname expand
@@ -124,6 +108,9 @@ crossing <- function(...) {
   stopifnot(is_list(x))
 
   x <- drop_empty(x)
+  if (length(x) == 0) {
+    return(data.frame())
+  }
 
   is_atomic <- map_lgl(x, is_atomic)
   is_df <- map_lgl(x, is.data.frame)
@@ -135,7 +122,6 @@ crossing <- function(...) {
       "Each element must be either an atomic vector or a data frame.
        Problems: {problems}."
     ))
-
   }
 
   # turn each atomic vector into single column data frame
@@ -146,12 +132,12 @@ crossing <- function(...) {
   Reduce(cross_df, x)
 }
 cross_df <- function(x, y) {
-  x_idx <- rep(seq_len(nrow(x)), each = nrow(y))
-  y_idx <- rep(seq_len(nrow(y)), nrow(x))
+  x_idx <- rep(seq_nrow(x), each = nrow(y))
+  y_idx <- rep(seq_nrow(y), nrow(x))
   dplyr::bind_cols(x[x_idx, , drop = FALSE], y[y_idx, , drop = FALSE])
 }
-drop_empty <- function(x) {
-  empty <- map_lgl(x, function(x) length(x) == 0)
+drop_empty <- function(x, factor = TRUE) {
+  empty <- map_lgl(x, function(x) length(x) == 0 & (!factor | !is.factor(x)))
   x[!empty]
 }
 
@@ -161,24 +147,9 @@ nesting <- function(...) {
   x <- tibble::lst(...)
 
   stopifnot(is_list(x))
-  x <- drop_empty(x)
+  x <- drop_empty(x, factor = FALSE)
 
   df <- as_tibble(x)
   df <- dplyr::distinct(df)
   df[do.call(order, df), , drop = FALSE]
-}
-
-
-#' @rdname deprecated-se
-#' @param x For `nesting_` and `crossing_` a list of variables.
-#' @export
-crossing_ <- function(x) {
-  x <- compat_lazy_dots(x, caller_env())
-  crossing(!!! x)
-}
-#' @rdname deprecated-se
-#' @export
-nesting_ <- function(x) {
-  x <- compat_lazy_dots(x, caller_env())
-  nesting(!!! x)
 }

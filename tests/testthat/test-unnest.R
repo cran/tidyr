@@ -19,6 +19,15 @@ test_that("unnesting row binds data frames", {
   expect_equal(unnest(df)$x, 1:10)
 })
 
+test_that("can unnested lists", {
+  df <- tibble(
+    x = 1:2,
+    y = list(list("a"), list("b"))
+  )
+  rs <- unnest(df, y)
+  expect_identical(rs, tibble(x = 1:2, y = list("a", "b")))
+})
+
 test_that("elements must all be of same type", {
   df <- tibble(x = list(1, "a"))
   expect_error(unnest(df), "(incompatible type)|(numeric to character)|(character to numeric)")
@@ -38,7 +47,7 @@ test_that("multiple columns must be same length", {
 })
 
 test_that("nested is split as a list (#84)", {
-  df <- tibble(x = 1:3, y = list(1,2:3,4), z = list(5,6:7,8))
+  df <- tibble(x = 1:3, y = list(1, 2:3, 4), z = list(5, 6:7, 8))
   expect_warning(out <- unnest(df, y, z), NA)
   expect_equal(out$x, c(1, 2, 2, 3))
   expect_equal(out$y, unlist(df$y))
@@ -46,7 +55,7 @@ test_that("nested is split as a list (#84)", {
 })
 
 test_that("unnest has mutate semantics", {
-  df <- tibble(x = 1:3, y = list(1,2:3,4))
+  df <- tibble(x = 1:3, y = list(1, 2:3, 4))
   out <- df %>% unnest(z = map(y, `+`, 1))
 
   expect_equal(out$z, 2:5)
@@ -60,7 +69,7 @@ test_that(".id creates vector of names for vector unnest", {
 })
 
 test_that(".id creates vector of names for grouped vector unnest", {
-  df <- data_frame(x = 1:2, y = list(a = 1, b = 1:2)) %>%
+  df <- tibble(x = 1:2, y = list(a = 1, b = 1:2)) %>%
     dplyr::group_by(x)
   out <- unnest(df, .id = "name")
 
@@ -78,9 +87,9 @@ test_that(".id creates vector of names for data frame unnest", {
 })
 
 test_that(".id creates vector of names for grouped data frame unnest", {
-  df <- data_frame(x = 1:2, y = list(
-    a = data_frame(y = 1),
-    b = data_frame(y = 1:2)
+  df <- tibble(x = 1:2, y = list(
+    a = tibble(y = 1),
+    b = tibble(y = 1:2)
   )) %>%
     dplyr::group_by(x)
   out <- unnest(df, .id = "name")
@@ -99,6 +108,27 @@ test_that("sep combines column names", {
   tibble(x = ldf, y = ldf) %>%
     unnest(.sep = "_") %>%
     expect_named(c("x_x", "y_x"))
+})
+
+test_that("can unnest empty data frame", {
+  df <- tibble(x = integer(), y = list())
+  out <- unnest(df, y)
+  expect_equal(out, tibble(x = integer()))
+})
+
+test_that("empty ... returns df if no list-cols", {
+  df <- tibble(x = integer(), y = integer())
+  expect_equal(unnest(df), df)
+})
+
+test_that("can optional preserve list cols", {
+  df <- tibble(x = list(3, 4), y = list("a", "b"))
+  rs <- df %>% unnest(x, .preserve = y)
+  expect_identical(rs, tibble(y = df$y, x = c(3, 4)))
+
+  df <- tibble(x = list(c("d", "e")), y = list(1:2))
+  rs <- df %>% unnest(.preserve = y)
+  expect_identical(rs, tibble(y = rep(list(1:2), 2), x = c("d", "e")))
 })
 
 # Drop --------------------------------------------------------------------
@@ -122,7 +152,6 @@ test_that("unnest respects .drop_lists", {
 
   expect_equal(df %>% unnest(y, .drop = TRUE) %>% names(), c("x", "y"))
   expect_equal(df %>% unnest(z, .drop = FALSE) %>% names(), c("x", "y", "z"))
-
 })
 
 test_that("grouping is preserved", {

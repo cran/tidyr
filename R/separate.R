@@ -31,7 +31,7 @@
 #' @param convert If `TRUE`, will run [type.convert()] with
 #'   `as.is = TRUE` on new columns. This is useful if the component
 #'   columns are integer, numeric or logical.
-#' @param ... Defunct, will be removed in the next version of the package.
+#' @param ... Additional arguments passed on to methods.
 #' @seealso [unite()], the complement.
 #' @export
 #' @examples
@@ -56,22 +56,6 @@ separate <- function(data, col, into, sep = "[^[:alnum:]]+", remove = TRUE,
   UseMethod("separate")
 }
 #' @export
-separate.default <- function(data, col, into, sep = "[^[:alnum:]]+",
-                             remove = TRUE, convert = FALSE,
-                             extra = "warn", fill = "warn", ...) {
-  col <- compat_as_lazy(enquo(col))
-  separate_(data,
-    col = col,
-    into = into,
-    sep = sep,
-    remove = remove,
-    convert = convert,
-    extra = extra,
-    fill = fill,
-    ...
-  )
-}
-#' @export
 separate.data.frame <- function(data, col, into, sep = "[^[:alnum:]]+",
                                 remove = TRUE, convert = FALSE,
                                 extra = "warn", fill = "warn", ...) {
@@ -80,8 +64,8 @@ separate.data.frame <- function(data, col, into, sep = "[^[:alnum:]]+",
   var <- tidyselect::vars_pull(names(data), !! enquo(col))
   value <- as.character(data[[var]])
 
-  if (length(list(...)) != 0) {
-    warn("Using ... for passing arguments to `strsplit()` is defunct")
+  if (!is.character(into)) {
+    abort("`into` must be a character vector")
   }
 
   if (is.numeric(sep)) {
@@ -98,22 +82,18 @@ separate.data.frame <- function(data, col, into, sep = "[^[:alnum:]]+",
   }
 
   # Insert into existing data frame
-  data <- append_df(data, l, match(var, dplyr::tbl_vars(data)))
-  if (remove) {
-    data[[var]] <- NULL
-  }
+  data <- append_df(data, l, var, remove = remove)
 
   reconstruct_tibble(orig, data, if (remove) var else NULL)
 }
 
 strsep <- function(x, sep) {
-  sep <- c(0, sep, -1)
-
   nchar <- stringi::stri_length(x)
   pos <- map(sep, function(i) {
     if (i >= 0) return(i)
-    nchar + i + 1
+    pmax(0, nchar + i)
   })
+  pos <- c(list(0), pos, list(nchar))
 
   map(1:(length(pos) - 1), function(i) {
     stringi::stri_sub(x, pos[[i]] + 1, pos[[i + 1]])
@@ -139,39 +119,22 @@ str_split_fixed <- function(value, sep, n, extra = "warn", fill = "warn") {
   n_big <- length(simp$too_big)
   if (extra == "warn" && n_big > 0) {
     idx <- list_indices(simp$too_big)
-    warn(glue("Too many values at {n_big} locations: {idx}"))
+    warn(glue("Expected {n} pieces. Additional pieces discarded in {n_big} rows [{idx}]."))
   }
 
   n_sml <- length(simp$too_sml)
   if (fill == "warn" && n_sml > 0) {
     idx <- list_indices(simp$too_sml)
-    warn(glue("Too few values at {n_sml} locations: {idx}"))
+    warn(glue("Expected {n} pieces. Missing pieces filled with `NA` in {n_sml} rows [{idx}]."))
   }
 
   simp$strings
 }
 
+list_indices <- function(x, max = 20) {
+  if (length(x) > max) {
+    x <- c(x[seq_len(max)], "...")
+  }
 
-#' @rdname deprecated-se
-#' @inheritParams separate
-#' @export
-separate_ <- function(data, col, into, sep = "[^[:alnum:]]+", remove = TRUE,
-                      convert = FALSE, extra = "warn", fill = "warn", ...) {
-  UseMethod("separate_")
-}
-#' @export
-separate_.data.frame <- function(data, col, into, sep = "[^[:alnum:]]+",
-                                 remove = TRUE, convert = FALSE,
-                                 extra = "warn", fill = "warn", ...) {
-  col <- sym(col)
-  separate(data,
-    col = !! col,
-    into = into,
-    sep = sep,
-    remove = remove,
-    convert = convert,
-    extra = extra,
-    fill = fill,
-    ...
-  )
+  paste(x, collapse = ", ")
 }

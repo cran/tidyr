@@ -4,13 +4,14 @@
 \alias{replace_na}
 \title{Replace missing values}
 \usage{
-replace_na(data, replace = list(), ...)
+replace_na(data, replace, ...)
 }
 \arguments{
-\item{data}{A data frame.}
+\item{data}{A data frame or vector.}
 
-\item{replace}{A named list given the value to replace \code{NA} with
-for each column.}
+\item{replace}{If \code{data} is a data frame, a named list giving the value to
+replace \code{NA} with for each column. If \code{data} is a vector, a single value
+used for replacement.}
 
 \item{...}{Additional arguments for methods. Currently unused.}
 }
@@ -19,6 +20,12 @@ Replace missing values
 }
 \examples{
 library(dplyr)
-df <- tibble(x = c(1, 2, NA), y = c("a", NA, "b"))
+df <- tibble(x = c(1, 2, NA), y = c("a", NA, "b"), z = list(1:5, NULL, 10:20))
 df \%>\% replace_na(list(x = 0, y = "unknown"))
+
+# NULL are the list-col equivalent of NAs
+df \%>\% replace_na(list(z = list(5)))
+
+df$x \%>\% replace_na(0)
+df$y \%>\% replace_na("unknown")
 }

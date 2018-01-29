@@ -50,20 +50,6 @@ spread <- function(data, key, value, fill = NA, convert = FALSE,
   UseMethod("spread")
 }
 #' @export
-spread.default <- function(data, key, value, fill = NA, convert = FALSE,
-                           drop = TRUE, sep = NULL) {
-  key <- compat_as_lazy(enquo(key))
-  value <- compat_as_lazy(enquo(value))
-  spread_(data,
-    key_col = key,
-    value_col = value,
-    fill = fill,
-    convert = convert,
-    drop = drop,
-    sep = sep
-  )
-}
-#' @export
 spread.data.frame <- function(data, key, value, fill = NA, convert = FALSE,
                               drop = TRUE, sep = NULL) {
   key_var <- tidyselect::vars_pull(names(data), !! enquo(key))
@@ -74,7 +60,7 @@ spread.data.frame <- function(data, key, value, fill = NA, convert = FALSE,
   col_labels <- split_labels(col, col_id, drop = drop)
 
   rows <- data[setdiff(names(data), c(key_var, value_var))]
-  if (length(rows) == 0) {
+  if (ncol(rows) == 0 && nrow(rows) > 0) {
     # Special case when there's only one row
     row_id <- structure(1L, n = 1L)
     row_labels <- as.data.frame(matrix(nrow = 1, ncol = 0))
@@ -129,7 +115,12 @@ col_names <- function(x, sep = NULL) {
   names <- as.character(x[[1]])
 
   if (is_null(sep)) {
-    ifelse(are_na(names), "<NA>", names)
+    if (length(names) == 0) {
+      # ifelse will return logical()
+      character()
+    } else {
+      ifelse(are_na(names), "<NA>", names)
+    }
   } else {
     paste(names(x)[[1]], names, sep = sep)
   }
@@ -145,7 +136,9 @@ split_labels <- function(df, id, drop = TRUE) {
 
   if (drop) {
     representative <- match(sort(unique(id)), id)
-    df[representative, , drop = FALSE]
+    out <- df[representative, , drop = FALSE]
+    rownames(out) <- NULL
+    out
   } else {
     unique_values <- map(df, ulevels)
     rev(expand.grid(rev(unique_values), stringsAsFactors = FALSE))
@@ -157,31 +150,6 @@ ulevels <- function(x) {
     levs <- levels(x)
     factor(levs, levels = levs, ordered = is.ordered(x))
   } else {
-    sort(unique(x))
+    sort(unique(x), na.last = TRUE)
   }
-}
-
-
-#' @rdname deprecated-se
-#' @inheritParams spread
-#' @param key_col,value_col Strings giving names of key and value cols.
-#' @export
-spread_ <- function(data, key_col, value_col, fill = NA, convert = FALSE,
-                    drop = TRUE, sep = NULL) {
-  UseMethod("spread_")
-}
-#' @export
-spread_.data.frame <- function(data, key_col, value_col, fill = NA,
-                               convert = FALSE, drop = TRUE, sep = NULL) {
-  key_col <- sym(key_col)
-  value_col <- sym(value_col)
-
-  spread(data,
-    key = !! key_col,
-    value = !! value_col,
-    fill = fill,
-    convert = convert,
-    drop = drop,
-    sep = sep
-  )
 }

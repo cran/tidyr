@@ -13,6 +13,7 @@
 #'   names or column positions).
 #' @param into Names of new variables to create as character vector.
 #' @param regex a regular expression used to extract the desired values.
+#'   The should be one group (defined by `()`) for each element of `into`.
 #' @param remove If `TRUE`, remove input column from output data frame.
 #' @param convert If `TRUE`, will run [type.convert()] with
 #'   `as.is = TRUE` on new columns. This is useful if the component
@@ -33,18 +34,6 @@ extract <- function(data, col, into, regex = "([[:alnum:]]+)",
   UseMethod("extract")
 }
 #' @export
-extract.default <- function(data, col, into, regex = "([[:alnum:]]+)",
-                            remove = TRUE, convert = FALSE, ...) {
-  extract_(data,
-    col = compat_as_lazy(enquo(col)),
-    into = into,
-    regex = regex,
-    remove = remove,
-    convert = convert,
-    ...
-  )
-}
-#' @export
 extract.data.frame <- function(data, col, into, regex = "([[:alnum:]]+)",
                                remove = TRUE, convert = FALSE, ...) {
   var <- tidyselect::vars_pull(names(data), !! enquo(col))
@@ -57,8 +46,15 @@ extract.data.frame <- function(data, col, into, regex = "([[:alnum:]]+)",
   value <- as.character(data[[var]])
   matches <- stringi::stri_match_first_regex(value, regex)[, -1, drop = FALSE]
 
+  if (ncol(matches) != length(into)) {
+    stop(
+      "`regex` should define ", length(into), " groups; ", ncol(matches), " found.",
+      call. = FALSE
+    )
+  }
+
   # Use as_tibble post https://github.com/hadley/dplyr/issues/876
-  l <- map(seq_len(ncol(matches)), function(i) matches[, i])
+  l <- map(seq_ncol(matches), function(i) matches[, i])
   names(l) <- enc2utf8(into)
 
   if (convert) {
@@ -66,32 +62,7 @@ extract.data.frame <- function(data, col, into, regex = "([[:alnum:]]+)",
   }
 
   # Insert into existing data frame
-  out <- append_df(data, l, match(var, dplyr::tbl_vars(data)))
-  if (remove) {
-    out[[var]] <- NULL
-  }
+  out <- append_df(data, l, var, remove = remove)
 
   reconstruct_tibble(data, out, if (remove) var else chr())
-}
-
-
-#' @rdname deprecated-se
-#' @inheritParams extract
-#' @export
-extract_ <- function(data, col, into, regex = "([[:alnum:]]+)", remove = TRUE,
-                      convert = FALSE, ...) {
-  UseMethod("extract_")
-}
-#' @export
-extract_.data.frame <- function(data, col, into, regex = "([[:alnum:]]+)",
-                                remove = TRUE, convert = FALSE, ...) {
-  col <- compat_lazy(col, caller_env())
-  extract(data,
-    col = !! col,
-    into = into,
-    regex = regex,
-    remove = remove,
-    convert = convert,
-    ...
-  )
 }

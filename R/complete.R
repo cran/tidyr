@@ -26,32 +26,16 @@
 #' # You can also choose to fill in missing values
 #' df %>% complete(group, nesting(item_id, item_name), fill = list(value1 = 0))
 complete <- function(data, ..., fill = list()) {
-  if (is_empty(exprs(...))) {
-    abort("Please supply variables to complete")
-  }
-
   UseMethod("complete")
-}
-complete.default <- function(data, ..., fill = list()) {
-  complete_(data, .dots = compat_as_lazy_dots(...), fill = fill)
 }
 #' @export
 complete.data.frame <- function(data, ..., fill = list()) {
   full <- expand(data, ...)
+  if (is_empty(full)) {
+    return(data)
+  }
   full <- dplyr::left_join(full, data, by = names(full))
   full <- replace_na(full, replace = fill)
 
   reconstruct_tibble(data, full)
-}
-
-#' @rdname deprecated-se
-#' @inheritParams complete
-#' @export
-complete_ <- function(data, cols, fill = list(), ...) {
-  UseMethod("complete_")
-}
-#' @export
-complete_.data.frame <- function(data, cols, fill = list(), ...) {
-  cols <- compat_lazy_dots(cols, caller_env())
-  complete(data, !!! cols, fill = fill)
 }

@@ -1,7 +1,8 @@
 #' Unnest a list column.
 #'
 #' If you have a list-column, this makes each element of the list its own
-#' row. List-columns can either be atomic vectors or data frames.
+#' row. `unnest()` can handle list-columns that can atomic vectors, lists, or
+#' data frames (but not a mixture of the different types).
 #'
 #' If you unnest multiple columns, parallel entries must have the same length
 #' or number of rows (if a data frame).
@@ -12,6 +13,10 @@
 #' @param .drop Should additional list columns be dropped? By default,
 #'   `unnest` will drop them if unnesting the specified columns requires
 #'   the rows to be duplicated.
+#' @param .preserve Optionally, list-columns to preserve in the output. These
+#'   will be duplicated in the same way as atomic vectors. This has
+#'   [dplyr::select] semantics so you can preserve multiple variables with
+#'   `.preserve = c(x, y)` or `.preserve = starts_with("list")`.
 #' @param .id Data frame identifier - if supplied, will create a new column
 #'   with name `.id`, giving a unique identifier. This is most useful if
 #'   the list column is named.
@@ -54,6 +59,9 @@
 #' # If you omit the column names, it'll unnest all list-cols
 #' df %>% unnest()
 #'
+#' # You can also choose to preserve one or more list-cols
+#' df %>% unnest(a, .preserve = b)
+#'
 #' # Nest and unnest are inverses
 #' df <- data.frame(x = c(1, 1, 2), y = 3:1)
 #' df %>% nest(y)
@@ -65,21 +73,24 @@
 #'   y = list(a = 1, b = 3:4)
 #' )
 #' unnest(df, .id = "name")
-unnest <- function(data, ..., .drop = NA, .id = NULL, .sep = NULL) {
+unnest <- function(data, ..., .drop = NA, .id = NULL, .sep = NULL, .preserve = NULL) {
   UseMethod("unnest")
 }
 #' @export
-unnest.default <- function(data, ..., .drop = NA, .id = NULL, .sep = NULL) {
-  unnest_cols <- compat_as_lazy_dots(...)
-  unnest_(data, unnest_cols = unnest_cols, .drop = .drop, .id = .id, .sep = .sep)
-}
-#' @export
 unnest.data.frame <- function(data, ..., .drop = NA, .id = NULL,
-                              .sep = NULL) {
+                              .sep = NULL, .preserve = NULL) {
+  preserve <- tidyselect::vars_select(names(data), !!! enquo(.preserve))
   quos <- quos(...)
   if (is_empty(quos)) {
     list_cols <- names(data)[map_lgl(data, is_list)]
+    list_cols <- setdiff(list_cols, preserve)
+
     quos <- syms(list_cols)
+  }
+
+
+  if (length(quos) == 0) {
+    return(data)
   }
 
   nested <- dplyr::transmute(dplyr::ungroup(data), !!! quos)
@@ -105,13 +116,16 @@ unnest.data.frame <- function(data, ..., .drop = NA, .id = NULL,
 
   unnested_dataframe <- map(nest_types$dataframe %||% list(), dplyr::bind_rows, .id = .id)
   if (!is_null(.sep)) {
-    unnested_dataframe <- imap(unnested_dataframe,
+    unnested_dataframe <- imap(
+      unnested_dataframe,
       function(df, name) {
         set_names(df, paste(name, names(df), sep = .sep))
-      })
+      }
+    )
   }
-  if (length(unnested_dataframe) > 0)
+  if (length(unnested_dataframe) > 0) {
     unnested_dataframe <- dplyr::bind_cols(unnested_dataframe)
+  }
 
   # Keep list columns by default, only if the rows aren't expanded
   if (identical(.drop, NA)) {
@@ -131,14 +145,18 @@ unnest.data.frame <- function(data, ..., .drop = NA, .id = NULL,
   }
   group_vars <- setdiff(group_vars, names(nested))
 
-  rest <- data[rep(1:nrow(data), n[[1]]), group_vars, drop = FALSE]
+  # Add list columns to be preserved
+  group_vars <- union(group_vars, preserve)
+
+  rest <- data[rep(seq_nrow(data), n[[1]]), group_vars, drop = FALSE]
   out <- dplyr::bind_cols(rest, unnested_atomic, unnested_dataframe)
+
   reconstruct_tibble(data, out)
 }
 
 list_col_type <- function(x) {
   is_data_frame <- map_lgl(x, is.data.frame)
-  is_atomic <- map_lgl(x, is_atomic)
+  is_atomic <- map_lgl(x, function(x) !is.object(x) && is_vector(x))
 
   if (all(is_data_frame)) {
     "dataframe"
@@ -164,19 +182,4 @@ id_col <- function(x) {
   lengths <- map_int(x, length)
 
   ids[rep(seq_along(ids), lengths)]
-}
-
-
-#' @rdname deprecated-se
-#' @inheritParams unnest
-#' @param unnest_cols Name of columns that needs to be unnested.
-#' @export
-unnest_ <- function(data, unnest_cols, .drop = NA, .id = NULL, .sep = NULL) {
-  UseMethod("unnest_")
-}
-#' @export
-unnest_.data.frame <- function(data, unnest_cols, .drop = NA, .id = NULL,
-                               .sep = NULL) {
-  unnest_cols <- compat_lazy_dots(unnest_cols, caller_env())
-  unnest(data, !!! unnest_cols, .drop = .drop, .id = .id, .sep = .sep)
 }

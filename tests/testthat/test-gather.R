@@ -38,6 +38,12 @@ test_that("key converted to character by default", {
   expect_equal(out$k, c("y", "x"))
 })
 
+test_that("covert will generate integers if needed", {
+  df <- tibble(`1` = 1, `2` = 2)
+  out <- gather(df, convert = TRUE)
+  expect_identical(out$key, c(1L, 2L))
+})
+
 test_that("key preserves column ordering when factor_key = TRUE", {
   df <- data.frame(y = 1, x = 2)
   out <- gather(df, k, v, factor_key = TRUE)
@@ -46,7 +52,7 @@ test_that("key preserves column ordering when factor_key = TRUE", {
 
 test_that("preserve class of input", {
   dat <- data.frame(x = 1:2)
-  dat %>% as_tibble %>% gather %>% expect_is("tbl_df")
+  dat %>% as_tibble() %>% gather() %>% expect_is("tbl_df")
 })
 
 test_that("additional inputs control which columns to gather", {
@@ -68,14 +74,88 @@ test_that("group_vars are kept where possible", {
   expect_equal(dplyr::groups(out), list(quote(x)))
 })
 
+test_that("overwrites existing vars", {
+  df <- data.frame(
+    X = 1,
+    Y = 1,
+    Z = 2
+  )
+
+  rs <- gather(df, key = "name", value = "Y")
+  expect_named(rs, c("name", "Y"))
+  expect_equal(rs$Y, c(1, 2))
+})
+
 # Column types ------------------------------------------------------------
+
+test_that("can gather all atomic vectors", {
+  df1 <- data.frame(x = 1, y = FALSE)
+  df2 <- data.frame(x = 1, y = 1L)
+  df3 <- data.frame(x = 1, y = 1)
+  df4 <- data.frame(x = 1, y = "a", stringsAsFactors = FALSE)
+  df5 <- data.frame(x = 1, y = 1 + 1i, stringsAsFactors = FALSE)
+
+  gathered <- function(val) {
+    data.frame(x = 1, key = "y", val = val, stringsAsFactors = FALSE)
+  }
+
+  expect_equal(gather(df1, key, val, -x), gathered(FALSE))
+  expect_equal(gather(df2, key, val, -x), gathered(1L))
+  expect_equal(gather(df3, key, val, -x), gathered(1))
+  expect_equal(gather(df4, key, val, -x), gathered("a"))
+  expect_equal(gather(df5, key, val, -x), gathered(1 + 1i))
+})
+
+test_that("can gather all atomic vectors", {
+  df1 <- data.frame(x = 1, y = FALSE)
+  df2 <- data.frame(x = 1, y = 1L)
+  df3 <- data.frame(x = 1, y = 1)
+  df4 <- data.frame(x = 1, y = "a", stringsAsFactors = FALSE)
+  df5 <- data.frame(x = 1, y = 1 + 1i, stringsAsFactors = FALSE)
+
+  gathered_val <- function(val) {
+    data.frame(x = 1, key = "y", val = val, stringsAsFactors = FALSE)
+  }
+  gathered_key <- function(key) {
+    data.frame(y = key, key = "x", val = 1, stringsAsFactors = FALSE)
+  }
+
+  expect_equal(gather(df1, key, val, -x), gathered_val(FALSE))
+  expect_equal(gather(df2, key, val, -x), gathered_val(1L))
+  expect_equal(gather(df3, key, val, -x), gathered_val(1))
+  expect_equal(gather(df4, key, val, -x), gathered_val("a"))
+  expect_equal(gather(df5, key, val, -x), gathered_val(1 + 1i))
+
+  expect_equal(gather(df1, key, val, -y), gathered_key(FALSE))
+  expect_equal(gather(df2, key, val, -y), gathered_key(1L))
+  expect_equal(gather(df3, key, val, -y), gathered_key(1))
+  expect_equal(gather(df4, key, val, -y), gathered_key("a"))
+  expect_equal(gather(df5, key, val, -y), gathered_key(1 + 1i))
+
+})
 
 test_that("gather throws error for POSIXlt", {
   df <- data.frame(y = 1)
   df$x <- as.POSIXlt(Sys.time())
 
   expect_error(gather(df, key, val, -x), "a POSIXlt")
+  expect_error(gather(df, key, val, -y), "a POSIXlt")
 })
+
+test_that("gather throws error for weird objects", {
+  df <- data.frame(y = 1)
+  df$x <- expression(x)
+  expect_error(gather(df, key, val, -x), "atomic vector or list")
+  expect_error(gather(df, key, val, -y), "atomic vector or list")
+
+  e <- new.env(parent = emptyenv())
+  e$x <- 1
+  df <- data.frame(y = 1)
+  df$x <- e
+  expect_error(gather(df, key, val, -x), "atomic vector or list")
+  expect_error(gather(df, key, val, -y), "atomic vector or list")
+})
+
 
 test_that("factors coerced to characters, not integers", {
   df <- data.frame(
@@ -83,8 +163,10 @@ test_that("factors coerced to characters, not integers", {
     v2 = factor(letters[1:3])
   )
 
-  expect_warning(out <- gather(df, k, v),
-    "attributes are not identical across measure variables")
+  expect_warning(
+    out <- gather(df, k, v),
+    "attributes are not identical across measure variables"
+  )
 
   expect_equal(out$v, c(1:3, letters[1:3]))
 })
@@ -109,8 +191,10 @@ test_that("varying attributes are dropped with a warning", {
     date1 = as.POSIXct(Sys.Date()),
     date2 = Sys.Date() + 10
   )
-  expect_warning(gather(df, k, v),
-    "attributes are not identical across measure variables")
+  expect_warning(
+    gather(df, k, v),
+    "attributes are not identical across measure variables"
+  )
 })
 
 test_that("gather preserves OBJECT bit on e.g. POSIXct", {
