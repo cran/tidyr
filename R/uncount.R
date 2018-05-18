@@ -1,14 +1,14 @@
 #' "Uncount" a data frame
 #'
-#' Performs the opposite opperation to [dplyr::count()], duplicating rows
-#' acoording to a weighting variable (or expression).
+#' Performs the opposite operation to [dplyr::count()], duplicating rows
+#' according to a weighting variable (or expression).
 #'
 #' @param data A data frame, tibble, or grouped tibble.
 #' @param weights A vector of weights. Evaluated in the context of `data`;
 #'   supports quasiquotation.
 #' @param .id Supply a string to create a new variable which gives a unique
 #'   identifier for each created row.
-#' @param .remove If `TRUE`, and `weights` is a signle `
+#' @param .remove If `TRUE`, and `weights` is a `single`
 #' @export
 #' @examples
 #' df <- tibble::tibble(x = c("a", "b"), n = c(1, 2))

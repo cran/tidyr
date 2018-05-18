@@ -8,7 +8,7 @@
 #' or number of rows (if a data frame).
 #'
 #' @inheritParams expand
-#' @param ... Specification of columns to nest. Use bare variable names or
+#' @param ... Specification of columns to unnest. Use bare variable names or
 #'   functions of variables. If omitted, defaults to all list-cols.
 #' @param .drop Should additional list columns be dropped? By default,
 #'   `unnest` will drop them if unnesting the specified columns requires
@@ -156,7 +156,7 @@ unnest.data.frame <- function(data, ..., .drop = NA, .id = NULL,
 
 list_col_type <- function(x) {
   is_data_frame <- map_lgl(x, is.data.frame)
-  is_atomic <- map_lgl(x, function(x) !is.object(x) && is_vector(x))
+  is_atomic <- map_lgl(x, function(x) is_atomic(x) || (is_list(x) && !is.object(x)))
 
   if (all(is_data_frame)) {
     "dataframe"
