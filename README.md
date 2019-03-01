@@ -1,12 +1,17 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# tidyr <img src="man/figures/logo.png" align="right" />
+# tidyr <a href='https:/tidyr.tidyverse.org'><img src='man/figures/logo.png' align="right" height="139" /></a>
 
-[![Build
-Status](https://travis-ci.org/tidyverse/tidyr.svg?branch=master)](https://travis-ci.org/tidyverse/tidyr)
-[![codecov.io](http://codecov.io/github/tidyverse/tidyr/coverage.svg?branch=master)](http://codecov.io/github/tidyverse/tidyr?branch=master)
-[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/tidyr)](https://cran.r-project.org/package=tidyr)
+<!-- badges: start -->
+
+[![CRAN
+status](https://www.r-pkg.org/badges/version/tidyr)](https://cran.r-project.org/package=tidyr)
+[![Travis build
+status](https://travis-ci.org/tidyverse/tidyr.svg?branch=master)](https://travis-ci.org/tidyverse/tidyr)
+[![Codecov test
+coverage](https://codecov.io/gh/tidyverse/tidyr/branch/master/graph/badge.svg)](https://codecov.io/gh/tidyverse/tidyr?branch=master)
+<!-- badges: end -->
 
 ## Overview
 
@@ -89,3 +94,16 @@ in different places:
 | reshape(2)   | melt    | cast   |
 | spreadsheets | unpivot | pivot  |
 | databases    | fold    | unfold |
+
+## Getting help
+
+If you encounter a clear bug, please file a minimal reproducible example
+on [github](https://github.com/tidyverse/tidyr/issues). For questions
+and other discussion, please use
+[community.rstudio.com](https://community.rstudio.com/).
+
+-----
+
+Please note that the tidyr project is released with a [Contributor Code
+of Conduct](.github/CODE_OF_CONDUCT.md). By contributing to this
+project, you agree to abide by its terms.
