@@ -1,8 +1,15 @@
-#' Gather columns into key-value pairs.
+#' Gather columns into key-value pairs
 #'
-#' Gather takes multiple columns and collapses into key-value pairs,
-#' duplicating all other columns as needed. You use `gather()` when
-#' you notice that you have columns that are not variables.
+#' @description
+#' \Sexpr[results=rd, stage=render]{lifecycle::badge("retired")}
+#'
+#' Development on `gather()` is complete, and for new code we recommend
+#' switching to `pivot_longer()`, which is easier to use, more featureful, and
+#' still under active development.
+#' `df %>% gather("key", "value", x, y, z)` is equivalent to
+#' `df %>% pivot_longer(c(x, y, z), names_to = "key", values_to = "value")`
+#'
+#' See more details in `vignette("pivot")`.
 #'
 #' @section Rules for selection:
 #'
@@ -57,7 +64,7 @@
 #' @export
 #' @examples
 #' library(dplyr)
-#' # From http://stackoverflow.com/questions/1181060
+#' # From https://stackoverflow.com/questions/1181060
 #' stocks <- tibble(
 #'   time = as.Date('2009-01-01') + 0:9,
 #'   X = rnorm(10, 0, 1),
@@ -85,6 +92,7 @@
 #' mini_iris %>% gather(key = "flower_att", value = "measurement", -Species)
 gather <- function(data, key = "key", value = "value", ...,
                    na.rm = FALSE, convert = FALSE, factor_key = FALSE) {
+  ellipsis::check_dots_unnamed()
   UseMethod("gather")
 }
 #' @export
@@ -98,7 +106,7 @@ gather.data.frame <- function(data, key = "key", value = "value", ...,
   if (is_empty(quos)) {
     gather_vars <- setdiff(names(data), c(key_var, value_var))
   } else {
-    gather_vars <- unname(tidyselect::vars_select(names(data), !!! quos))
+    gather_vars <- unname(tidyselect::vars_select(tbl_vars(data), !!! quos))
   }
 
   if (is_empty(gather_vars)) {

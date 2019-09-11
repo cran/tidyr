@@ -2,7 +2,7 @@
 % Please edit documentation in R/separate-rows.R
 \name{separate_rows}
 \alias{separate_rows}
-\title{Separate a collapsed column into multiple rows.}
+\title{Separate a collapsed column into multiple rows}
 \usage{
 separate_rows(data, ..., sep = "[^[:alnum:].]+", convert = FALSE)
 }
@@ -53,7 +53,6 @@ can contain either a column name as string or a column position).
 }
 
 \examples{
-
 df <- data.frame(
   x = 1:3,
   y = c("a", "d,e,f", "g,h"),

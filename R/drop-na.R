@@ -10,11 +10,12 @@
 #' df %>% drop_na(x)
 #' @export
 drop_na <- function(data, ...) {
+  ellipsis::check_dots_unnamed()
   UseMethod("drop_na")
 }
 #' @export
 drop_na.data.frame <- function(data, ...) {
-  vars <- unname(tidyselect::vars_select(colnames(data), ...))
+  vars <- unname(tidyselect::vars_select(tbl_vars(data), ...))
 
   if (is_empty(vars)) {
     f <- complete_cases(data)

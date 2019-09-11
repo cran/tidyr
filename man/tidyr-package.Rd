@@ -4,18 +4,22 @@
 \name{tidyr-package}
 \alias{tidyr}
 \alias{tidyr-package}
-\title{tidyr: Easily Tidy Data with 'spread()' and 'gather()' Functions}
+\title{tidyr: Tidy Messy Data}
 \description{
 \if{html}{\figure{logo.png}{options: align='right'}}
 
-An evolution of 'reshape2'. It's designed
-    specifically for data tidying (not general reshaping or aggregating)
-    and works well with 'dplyr' data pipelines.
+Tools to help to create tidy data, where each column is a 
+    variable, each row is an observation, and each cell contains a single value.  
+    'tidyr' contains tools for changing the shape (pivoting) and hierarchy
+    (nesting and 'unnesting') of a dataset, turning deeply nested lists
+    into rectangular data frames ('rectangling'), and extracting values out 
+    of string columns. It also includes tools for working with missing values 
+    (both implicit and explicit).
 }
 \seealso{
 Useful links:
 \itemize{
-  \item \url{http://tidyr.tidyverse.org}
+  \item \url{https://tidyr.tidyverse.org}
   \item \url{https://github.com/tidyverse/tidyr}
   \item Report bugs at \url{https://github.com/tidyverse/tidyr/issues}
 }

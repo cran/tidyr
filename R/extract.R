@@ -1,4 +1,5 @@
-#' Extract one column into multiple columns.
+#' Extract a character column into multiple columns using regular
+#' expression groups
 #'
 #' Given a regular expression with capturing groups, `extract()` turns
 #' each group into a new column. If the groups don't match, or the input
@@ -12,17 +13,19 @@
 #'   [quasiquotation][rlang::quasiquotation] (you can unquote column
 #'   names or column positions).
 #' @param into Names of new variables to create as character vector.
+#'    Use `NA` to omit the variable in the output.
 #' @param regex a regular expression used to extract the desired values.
-#'   The should be one group (defined by `()`) for each element of `into`.
+#'   There should be one group (defined by `()`) for each element of `into`.
 #' @param remove If `TRUE`, remove input column from output data frame.
 #' @param convert If `TRUE`, will run [type.convert()] with
 #'   `as.is = TRUE` on new columns. This is useful if the component
 #'   columns are integer, numeric or logical.
-#' @param ... Other arguments passed on to [regexec()] to control
-#'   how the regular expression is processed.
+#'
+#'   NB: this will cause string `"NA"`s to be converted to `NA`s.
+#' @param ... Additional arguments passed on to methods.
+#' @seealso [separate()] to split up by a separator.
 #' @export
 #' @examples
-#' library(dplyr)
 #' df <- data.frame(x = c(NA, "a-b", "a-d", "b-c", "d-e"))
 #' df %>% extract(x, "A")
 #' df %>% extract(x, c("A", "B"), "([[:alnum:]]+)-([[:alnum:]]+)")
@@ -31,20 +34,27 @@
 #' df %>% extract(x, c("A", "B"), "([a-d]+)-([a-d]+)")
 extract <- function(data, col, into, regex = "([[:alnum:]]+)",
                     remove = TRUE, convert = FALSE, ...) {
+  ellipsis::check_dots_used()
   UseMethod("extract")
 }
 #' @export
 extract.data.frame <- function(data, col, into, regex = "([[:alnum:]]+)",
                                remove = TRUE, convert = FALSE, ...) {
   var <- tidyselect::vars_pull(names(data), !! enquo(col))
+  value <- as.character(data[[var]])
+
+  new_cols <- str_extract(value, into = into, regex = regex, convert = convert)
+  out <- append_df(data, new_cols, var, remove = remove)
+  reconstruct_tibble(data, out, if (remove) var else chr())
+}
+
+str_extract <- function(x, into, regex, convert = FALSE) {
   stopifnot(
     is_string(regex),
     is_character(into)
   )
 
-  # Extract matching groups
-  value <- as.character(data[[var]])
-  matches <- stringi::stri_match_first_regex(value, regex)[, -1, drop = FALSE]
+  matches <- stringi::stri_match_first_regex(x, regex)[, -1, drop = FALSE]
 
   if (ncol(matches) != length(into)) {
     stop(
@@ -53,16 +63,19 @@ extract.data.frame <- function(data, col, into, regex = "([[:alnum:]]+)",
     )
   }
 
-  # Use as_tibble post https://github.com/hadley/dplyr/issues/876
-  l <- map(seq_ncol(matches), function(i) matches[, i])
-  names(l) <- enc2utf8(into)
+  out <- as_tibble(matches, .name_repair = "minimal")
 
-  if (convert) {
-    l[] <- map(l, type.convert, as.is = TRUE)
+  # Handle duplicated names
+  if (anyDuplicated(into)) {
+    pieces <- split(as.list(out), into)
+    out <- as_tibble(map(pieces, pmap_chr, paste0, sep = ""))
+  } else {
+    names(out) <- as_utf8_character(into)
   }
 
-  # Insert into existing data frame
-  out <- append_df(data, l, var, remove = remove)
+  if (convert) {
+    out[] <- map(out, type.convert, as.is = TRUE)
+  }
 
-  reconstruct_tibble(data, out, if (remove) var else chr())
+  out
 }

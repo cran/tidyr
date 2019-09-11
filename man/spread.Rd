@@ -2,7 +2,7 @@
 % Please edit documentation in R/spread.R
 \name{spread}
 \alias{spread}
-\title{Spread a key-value pair across multiple columns.}
+\title{Spread a key-value pair across multiple columns}
 \usage{
 spread(data, key, value, fill = NA, convert = FALSE, drop = TRUE,
   sep = NULL)
@@ -37,7 +37,15 @@ data, filling in missing combinations with \code{fill}.}
 by "<key_name><sep><key_value>".}
 }
 \description{
-Spread a key-value pair across multiple columns.
+\Sexpr[results=rd, stage=render]{lifecycle::badge("retired")}
+
+Development on \code{spread()} is complete, and for new code we recommend
+switching to \code{pivot_wider()}, which is easier to use, more featureful, and
+still under active development.
+\code{df \%>\% spread(key, value)} is equivalent to
+\code{df \%>\% pivot_wider(names_from = key, values_from = value)}
+
+See more details in \code{vignette("pivot")}.
 }
 \examples{
 library(dplyr)

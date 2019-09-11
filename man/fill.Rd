@@ -2,9 +2,9 @@
 % Please edit documentation in R/fill.R
 \name{fill}
 \alias{fill}
-\title{Fill in missing values.}
+\title{Fill in missing values with previous or next value}
 \usage{
-fill(data, ..., .direction = c("down", "up"))
+fill(data, ..., .direction = c("down", "up", "downup", "updown"))
 }
 \arguments{
 \item{data}{A data frame.}
@@ -15,16 +15,16 @@ with \code{x:z}, exclude \code{y} with \code{-y}. For more selection options, se
 \code{\link[dplyr:select]{dplyr::select()}} documentation.}
 
 \item{.direction}{Direction in which to fill missing values. Currently
-either "down" (the default) or "up".}
+either "down" (the default), "up", "downup" (i.e. first down and then up)
+or "updown" (first up and then down).}
 }
 \description{
-Fills missing values in selected columns using the previous entry. This is useful in the
-common output format where values are not repeated, they're recorded
-each time they change.
+Fills missing values in selected columns using the next or previous entry.
+This is useful in the common output format where values are not repeated,
+and are only recorded when they change.
 }
 \details{
-Missing values are replaced in atomic vectors; \code{NULL}s are replaced
-in list.
+Missing values are replaced in atomic vectors; \code{NULL}s are replaced in lists.
 }
 \examples{
 df <- data.frame(Month = 1:12, Year = c(2000, rep(NA, 11)))

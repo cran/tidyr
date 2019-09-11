@@ -2,7 +2,7 @@
 % Please edit documentation in R/gather.R
 \name{gather}
 \alias{gather}
-\title{Gather columns into key-value pairs.}
+\title{Gather columns into key-value pairs}
 \usage{
 gather(data, key = "key", value = "value", ..., na.rm = FALSE,
   convert = FALSE, factor_key = FALSE)
@@ -38,9 +38,15 @@ stored as a character vector. If \code{TRUE}, will be stored as a factor,
 which preserves the original ordering of the columns.}
 }
 \description{
-Gather takes multiple columns and collapses into key-value pairs,
-duplicating all other columns as needed. You use \code{gather()} when
-you notice that you have columns that are not variables.
+\Sexpr[results=rd, stage=render]{lifecycle::badge("retired")}
+
+Development on \code{gather()} is complete, and for new code we recommend
+switching to \code{pivot_longer()}, which is easier to use, more featureful, and
+still under active development.
+\code{df \%>\% gather("key", "value", x, y, z)} is equivalent to
+\code{df \%>\% pivot_longer(c(x, y, z), names_to = "key", values_to = "value")}
+
+See more details in \code{vignette("pivot")}.
 }
 \section{Rules for selection}{
 
@@ -72,7 +78,7 @@ can contain either a column name as string or a column position).
 
 \examples{
 library(dplyr)
-# From http://stackoverflow.com/questions/1181060
+# From https://stackoverflow.com/questions/1181060
 stocks <- tibble(
   time = as.Date('2009-01-01') + 0:9,
   X = rnorm(10, 0, 1),

@@ -1,4 +1,15 @@
-#' Spread a key-value pair across multiple columns.
+#' Spread a key-value pair across multiple columns
+#'
+#' @description
+#' \Sexpr[results=rd, stage=render]{lifecycle::badge("retired")}
+#'
+#' Development on `spread()` is complete, and for new code we recommend
+#' switching to `pivot_wider()`, which is easier to use, more featureful, and
+#' still under active development.
+#' `df %>% spread(key, value)` is equivalent to
+#' `df %>% pivot_wider(names_from = key, values_from = value)`
+#'
+#' See more details in `vignette("pivot")`.
 #'
 #' @param data A data frame.
 #' @param key,value Column names or positions. This is passed to
@@ -84,8 +95,7 @@ spread.data.frame <- function(data, key, value, fill = NA, convert = FALSE,
     abort(glue(
       "Each row of output must be identified by a unique combination of keys.",
       "\nKeys are shared for {shared} rows:",
-      "\n{rows}",
-      "Do you need to create unique ID with tibble::rowid_to_column()?"
+      "\n{rows}"
     ))
   }
 

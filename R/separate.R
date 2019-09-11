@@ -1,11 +1,10 @@
-#' Separate one column into multiple columns.
+#' Separate a character column into multiple columns using a regular
+#' expression separator
 #'
 #' Given either regular expression or a vector of character positions,
 #' `separate()` turns a single character column into multiple columns.
 #'
 #' @inheritParams extract
-#' @param into Names of new variables to create as character vector.
-#'    Use `NA` to omit the variable in the output.
 #' @param sep Separator between columns.
 #'
 #'   If character, is interpreted as a regular expression. The default
@@ -28,11 +27,6 @@
 #'   * "warn" (the default): emit a warning and fill from the right
 #'   * "right": fill with missing values on the right
 #'   * "left": fill with missing values on the left
-#' @param remove If `TRUE`, remove input column from output data frame.
-#' @param convert If `TRUE`, will run [type.convert()] with
-#'   `as.is = TRUE` on new columns. This is useful if the component
-#'   columns are integer, numeric or logical.
-#' @param ... Additional arguments passed on to methods.
 #' @seealso [unite()], the complement, [extract()] which uses regular
 #'   expression capturing groups.
 #' @export
@@ -73,39 +67,46 @@
 #' df %>% separate(!!var, c("key","value"), ":")
 separate <- function(data, col, into, sep = "[^[:alnum:]]+", remove = TRUE,
                      convert = FALSE, extra = "warn", fill = "warn", ...) {
+  ellipsis::check_dots_used()
   UseMethod("separate")
 }
 #' @export
 separate.data.frame <- function(data, col, into, sep = "[^[:alnum:]]+",
                                 remove = TRUE, convert = FALSE,
                                 extra = "warn", fill = "warn", ...) {
-  orig <- data
-
   var <- tidyselect::vars_pull(names(data), !! enquo(col))
   value <- as.character(data[[var]])
 
+  new_cols <- str_separate(value,
+    into = into,
+    sep = sep,
+    convert = convert,
+    extra = extra,
+    fill = fill
+  )
+  out <- append_df(data, new_cols, var, remove = remove)
+  reconstruct_tibble(data, out, if (remove) var else NULL)
+}
+
+str_separate <- function(x, into, sep, convert = FALSE, extra = "warn", fill = "warn") {
   if (!is.character(into)) {
     abort("`into` must be a character vector")
   }
 
   if (is.numeric(sep)) {
-    l <- strsep(value, sep)
+    out <- strsep(x, sep)
   } else if (is_character(sep)) {
-    l <- str_split_fixed(value, sep, length(into), extra = extra, fill = fill)
+    out <- str_split_fixed(x, sep, length(into), extra = extra, fill = fill)
   } else {
     abort("`sep` must be either numeric or character")
   }
 
-  names(l) <- as_utf8_character(into)
-  l <- l[!is.na(names(l))]
+  names(out) <- as_utf8_character(into)
+  out <- out[!is.na(names(out))]
   if (convert) {
-    l[] <- map(l, type.convert, as.is = TRUE)
+    out[] <- map(out, type.convert, as.is = TRUE)
   }
-
-  # Insert into existing data frame
-  data <- append_df(data, l, var, remove = remove)
-
-  reconstruct_tibble(orig, data, if (remove) var else NULL)
+  as_tibble(out)
 }
 
 strsep <- function(x, sep) {

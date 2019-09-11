@@ -22,7 +22,7 @@
 #'   54 years of age, `5564` = 55 to 64 years of age, `65` = 65 years
 #'   of age or older).
 #'
-#' @source \url{http://www.who.int/tb/country/data/download/en/}
+#' @source <https://www.who.int/tb/country/data/download/en/>
 "who"
 
 #' @rdname who
@@ -42,7 +42,7 @@
 #' The data is a subset of the data contained in the World Health
 #' Organization Global Tuberculosis Report
 #'
-#' @source \url{http://www.who.int/tb/country/data/download/en/}
+#' @source <https://www.who.int/tb/country/data/download/en/>
 "table1"
 
 #' @rdname table1
@@ -60,9 +60,104 @@
 #' @rdname table1
 "table5"
 
-#' Some data about the Smith family.
+#' Some data about the Smith family
 #'
 #' A small demo dataset describing John and Mary Smith.
 #'
 #' @format A data frame with 2 rows and 5 columns.
 "smiths"
+
+#' US rent and income data
+#'
+#' Captured from the 2017 American Community Survey using the tidycensus
+#' package.
+#'
+#' @format A dataset with variables:
+#' \describe{
+#'   \item{GEOID}{FIP state identifier}
+#'   \item{NAME}{Name of state}
+#'   \item{variable}{Variable name: income = median yearly income,
+#'      rent = median monthly rent}
+#'   \item{estimate}{Estimated value}
+#'   \item{moe}{90\% margin of error}
+#' }
+"us_rent_income"
+
+#' Fish encounters
+#'
+#' Information about fish swimming down a river: each station represents an
+#' autonomous monitor that records if a tagged fish was seen at that location.
+#' Fish travel in one direction (migrating downstream). Information about
+#' misses is just as important as hits, but is not directly recorded in this
+#' form of the data.
+#'
+#' @source
+#' Dataset provided by Myfanwy Johnston; more details at
+#' <https://fishsciences.github.io/post/visualizing-fish-encounter-histories/>
+#'
+#' @format A dataset with variables:
+#' \describe{
+#'   \item{fish}{Fish identifier}
+#'   \item{station}{Measurement station}
+#'   \item{seen}{Was the fish seen? (1 if yes, and true for all rows)}
+#' }
+"fish_encounters"
+
+#' Population data from the world bank
+#'
+#' Data about population from the World Bank.
+#'
+#' @source
+#' Dataset from the World Bank data bank: <https://data.worldbank.org>
+#'
+#' @format A dataset with variables:
+#' \describe{
+#'   \item{country}{Three letter country code}
+#'   \item{indicator}{Indicator name: `SP.POP.GROW` = population growth,
+#'     `SP.POP.TOTL` = total population, `SP.URB.GROW` = urban population
+#'     growth, `SP.URB.TOTL` = total urban population}
+#'   \item{2000-2018}{Value for each year}
+#' }
+"world_bank_pop"
+
+#' Pew religion and income survey
+#'
+#' @format A dataset with variables:
+#' \describe{
+#'   \item{religion}{Name of religion}
+#'   \item{`<$10k`-`Don\'t know/refused`}{Number of respondees with
+#'     income range in column name}
+#' }
+#' @source
+#' Downloaded from <https://www.pewforum.org/religious-landscape-study/>
+#' (downloaded November 2009)
+"relig_income"
+
+#' Completed construction in the US in 2018
+#'
+#' @format A dataset with variables:
+#' \describe{
+#'   \item{Year,Month}{Record date}
+#'   \item{`1 unit`, `2 to 4 units`, `5 units or mote`}{Number of completed
+#'     units of each size}
+#'   \item{Northeast,Midwest,South,West}{Number of completed units in each region}
+#' }
+#' @source
+#' Completions of "New Residential Construction" found in Table 5 at
+#' <https://www.census.gov/construction/nrc/xls/newresconst.xls>
+#' (downloaded March 2019)
+"construction"
+
+#' Song rankings for billboard top 100 in the year 2000
+#'
+#' @format A dataset with variables:
+#' \describe{
+#'   \item{artist}{Artist name}
+#'   \item{track}{Song name},
+#'   \item{date.enter}{Date the song entered the top 100}
+#'   \item{wk1 -- wk76}{Rank of the song in each week after it entered}
+#' }
+#' @source
+#' The "Whitburn" project, <https://waxy.org/2008/05/the_whitburn_project/>,
+#' (downloaded April 2008)
+"billboard"
