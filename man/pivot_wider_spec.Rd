@@ -19,41 +19,62 @@ build_wider_spec(
   names_from = name,
   values_from = value,
   names_prefix = "",
-  names_sep = "_"
+  names_sep = "_",
+  names_glue = NULL,
+  names_sort = FALSE
 )
 }
 \arguments{
 \item{data}{A data frame to pivot.}
 
-\item{names_repair}{What happen if the output has invalid column names?
+\item{spec}{A specification data frame. This is useful for more complex
+pivots because it gives you greater control on how metadata stored in the
+columns become column names in the result.
+
+Must be a data frame containing character \code{.name} and \code{.value} columns.
+Additional columns in \code{spec} should be named to match columns in the
+long format of the dataset and contain values corresponding to columns
+pivoted from the wide format.
+The special \code{.seq} variable is used to disambiguate rows internally;
+it is automatically removed after pivotting.}
+
+\item{names_repair}{What happens if the output has invalid column names?
 The default, \code{"check_unique"} is to error if the columns are duplicated.
 Use \code{"minimal"} to allow duplicates in the output, or \code{"unique"} to
 de-duplicated by adding numeric suffixes. See \code{\link[vctrs:vec_as_names]{vctrs::vec_as_names()}}
 for more options.}
 
-\item{id_cols}{A set of columns that uniquely identifies each observation.
-Defaults to all columns in \code{data} except for the columns specified in
-\code{names_from} and \code{values_from}. Typically used when you have additional
-variables that is directly related.}
+\item{id_cols}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> A set of columns that
+uniquely identifies each observation. Defaults to all columns in \code{data}
+except for the columns specified in \code{names_from} and \code{values_from}.
+Typically used when you have redundant variables, i.e. variables whose
+values are perfectly correlated with existing variables.}
 
-\item{values_fill}{Optionally, a named list specifying what each \code{value}
-should be filled in with when missing.}
+\item{values_fill}{Optionally, a (scalar) value that specifies what each
+\code{value} should be filled in with when missing.
 
-\item{values_fn}{Optionally, a named list providing a function that will be
-applied to the \code{value} in each cell in the output. You will typically
-use this when the combination of \code{id_cols} and \code{value} column does not
-uniquely identify an observation.}
+This can be a named list if you want to apply different aggregations
+to different value columns.}
 
-\item{names_from}{A pair of arguments describing which column
-(or columns) to get the name of the output column (\code{name_from}), and
-which column (or columns) to get the cell values from (\code{values_from}).
+\item{values_fn}{Optionally, a function applied to the \code{value} in each cell
+in the output. You will typically use this when the combination of
+\code{id_cols} and \code{value} column does not uniquely identify an observation.
+
+This can be a named list if you want to apply different aggregations
+to different value columns.}
+
+\item{names_from}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> A pair of
+arguments describing which column (or columns) to get the name of the
+output column (\code{names_from}), and which column (or columns) to get the
+cell values from (\code{values_from}).
 
 If \code{values_from} contains multiple values, the value will be added to the
 front of the output column.}
 
-\item{values_from}{A pair of arguments describing which column
-(or columns) to get the name of the output column (\code{name_from}), and
-which column (or columns) to get the cell values from (\code{values_from}).
+\item{values_from}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> A pair of
+arguments describing which column (or columns) to get the name of the
+output column (\code{names_from}), and which column (or columns) to get the
+cell values from (\code{values_from}).
 
 If \code{values_from} contains multiple values, the value will be added to the
 front of the output column.}
@@ -65,9 +86,43 @@ create syntactic variable names.}
 \item{names_sep}{If \code{names_from} or \code{values_from} contains multiple
 variables, this will be used to join their values together into a single
 string to use as a column name.}
+
+\item{names_glue}{Instead of \code{names_sep} and \code{names_prefix}, you can supply
+a glue specification that uses the \code{names_from} columns (and special
+\code{.value}) to create custom column names.}
+
+\item{names_sort}{Should the column names be sorted? If \code{FALSE}, the default,
+column names are ordered by first appearance.}
 }
 \description{
 This is a low level interface to pivotting, inspired by the cdata package,
 that allows you to describe pivotting with a data frame.
+}
+\examples{
+# See vignette("pivot") for examples and explanation
+
+us_rent_income
+spec1 <- us_rent_income \%>\%
+  build_wider_spec(names_from = variable, values_from = c(estimate, moe))
+spec1
+
+us_rent_income \%>\%
+  pivot_wider_spec(spec1)
+
+# Is equivalent to
+us_rent_income \%>\%
+  pivot_wider(names_from = variable, values_from = c(estimate, moe))
+
+# `pivot-wider_spec()` provides more control over column names and output format
+# instead of creating columns with estimate_ and moe_ prefixes,
+# keep original variable name for estimates and attach _moe as suffix
+spec2 <- tibble(
+  .name = c("income", "rent", "income_moe", "rent_moe"),
+  .value = c("estimate", "estimate", "moe", "moe"),
+  variable = c("income", "rent", "income", "rent")
+)
+
+us_rent_income \%>\%
+  pivot_wider_spec(spec2)
 }
 \keyword{internal}

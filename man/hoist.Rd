@@ -7,7 +7,15 @@
 \alias{unnest_auto}
 \title{Rectangle a nested list into a tidy tibble}
 \usage{
-hoist(.data, .col, ..., .remove = TRUE, .simplify = TRUE, .ptype = list())
+hoist(
+  .data,
+  .col,
+  ...,
+  .remove = TRUE,
+  .simplify = TRUE,
+  .ptype = list(),
+  .transform = list()
+)
 
 unnest_longer(
   data,
@@ -17,7 +25,8 @@ unnest_longer(
   indices_include = NULL,
   names_repair = "check_unique",
   simplify = TRUE,
-  ptype = list()
+  ptype = list(),
+  transform = list()
 )
 
 unnest_wider(
@@ -26,7 +35,8 @@ unnest_wider(
   names_sep = NULL,
   simplify = TRUE,
   names_repair = "check_unique",
-  ptype = list()
+  ptype = list(),
+  transform = list()
 )
 
 unnest_auto(data, col)
@@ -39,16 +49,26 @@ unnest_auto(data, col)
 \item{...}{Components of \code{.col} to turn into columns in the form
 \code{col_name = "pluck_specification"}. You can pluck by name with a character
 vector, by position with an integer vector, or with a combination of the
-two with a list. See \code{\link[purrr:pluck]{purrr::pluck()}} for details.}
+two with a list. See \code{\link[purrr:pluck]{purrr::pluck()}} for details.
+
+The column names must be unique in a call to \code{hoist()}, although existing
+columns with the same name will be overwritten. When plucking with a
+single string you can choose to omit the name, i.e. \code{hoist(df, col, "x")}
+is short-hand for \code{hoist(df, col, x = "x")}.}
 
 \item{.remove}{If \code{TRUE}, the default, will remove extracted components
 from \code{.col}. This ensures that each value lives only in one place.}
 
-\item{.simplify}{If \code{TRUE}, will attempt to simplify lists of length-1
-vectors to an atomic vector}
+\item{.simplify, simplify}{If \code{TRUE}, will attempt to simplify lists of
+length-1 vectors to an atomic vector}
 
-\item{.ptype}{Optionally, a named list of prototypes declaring the desired
-output type of each component.}
+\item{.ptype, ptype}{Optionally, a named list of prototypes declaring the desired
+output type of each component. Use this argument if you want to check each
+element has the types you expect when simplifying.}
+
+\item{.transform, transform}{Optionally, a named list of transformation functions
+applied to each component. Use this function if you want transform or
+parse individual elements as they are hoisted.}
 
 \item{values_to}{Name of column to store vector values. Defaults to \code{col}.}
 
@@ -74,19 +94,9 @@ names. Must be one of the following options:
 See \code{\link[vctrs:vec_as_names]{vctrs::vec_as_names()}} for more details on these terms and the
 strategies used to enforce them.}
 
-\item{simplify}{If \code{TRUE}, will attempt to simplify lists of length-1
-vectors to an atomic vector}
-
-\item{ptype}{Optionally, supply a data frame prototype for the output \code{cols},
-overriding the default that will be guessed from the combination of
-individual values.}
-
-\item{names_sep}{If \code{NULL}, the default, the names of new columns will
-come directly from the inner data frame.
-
-If a string, the names of the new columns will be formed by pasting
-together the outer column name with the inner names, separated by
-\code{names_sep}.}
+\item{names_sep}{If \code{NULL}, the default, the names will be left
+as is. If a string, the inner and outer names will be paste together using
+\code{names_sep} as a separator.}
 }
 \description{
 \Sexpr[results=rd, stage=render]{lifecycle::badge("maturing")}
@@ -147,7 +157,7 @@ df <- tibble(
        )
     ),
     list(
-      species = "clownfish",
+      species = "blue tang",
       color = "blue",
       films = c("Finding Nemo", "Finding Dory")
     )
@@ -160,7 +170,7 @@ df \%>\% unnest_wider(metadata)
 
 # Extract only specified components
 df \%>\% hoist(metadata,
-  species = "species",
+  "species",
   first_film = list("films", 1L),
   third_film = list("films", 3L)
 )
@@ -168,6 +178,7 @@ df \%>\% hoist(metadata,
 df \%>\%
   unnest_wider(metadata) \%>\%
   unnest_longer(films)
+
 # unnest_longer() is useful when each component of the list should
 # form a row
 df <- tibble(
@@ -177,6 +188,8 @@ df <- tibble(
 df \%>\% unnest_longer(y)
 # Automatically creates names if widening
 df \%>\% unnest_wider(y)
+# But you'll usually want to provide names_sep:
+df \%>\% unnest_wider(y, names_sep = "_")
 
 # And similarly if the vectors are named
 df <- tibble(

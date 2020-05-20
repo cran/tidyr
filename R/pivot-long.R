@@ -11,18 +11,23 @@
 #'
 #' @details
 #' `pivot_longer()` is an updated approach to [gather()], designed to be both
-#' simpler to use and to handle more use cases. We recomend you use
+#' simpler to use and to handle more use cases. We recommend you use
 #' `pivot_longer()` for new code; `gather()` isn't going away but is no longer
 #' under active development.
 #'
 #' @param data A data frame to pivot.
-#' @param cols Columns to pivot into longer format. This takes a tidyselect
-#'   specification.
+#' @param cols <[`tidy-select`][tidyr_tidy_select]> Columns to pivot into
+#'   longer format.
 #' @param names_to A string specifying the name of the column to create
 #'   from the data stored in the column names of `data`.
 #'
 #'   Can be a character vector, creating multiple columns, if `names_sep`
-#'   or `names_pattern` is provided.
+#'   or `names_pattern` is provided. In this case, there are two special
+#'   values you can take advantage of:
+#'
+#'   * `NA` will discard that component of the name.
+#'   * `.value` indicates that component of the name defines the name of the
+#'     column containing the cell values, overriding `values_to`.
 #' @param names_prefix A regular expression used to remove matching text
 #'   from the start of each variable name.
 #' @param names_sep,names_pattern If `names_to` contains multiple values,
@@ -35,10 +40,10 @@
 #'   `names_pattern` takes the same specification as [extract()], a regular
 #'   expression containing matching groups (`()`).
 #'
-#'   If these arguments does not give you enough control, use
+#'   If these arguments do not give you enough control, use
 #'   `pivot_longer_spec()` to create a spec object and process manually as
 #'   needed.
-#' @param names_repair What happen if the output has invalid column names?
+#' @param names_repair What happens if the output has invalid column names?
 #'   The default, `"check_unique"` is to error if the columns are duplicated.
 #'   Use `"minimal"` to allow duplicates in the output, or `"unique"` to
 #'   de-duplicated by adding numeric suffixes. See [vctrs::vec_as_names()]
@@ -52,13 +57,20 @@
 #'   in the `value_to` column. This effectively converts explicit missing values
 #'   to implicit missing values, and should generally be used only when missing
 #'   values in `data` were created by its structure.
-#' @param names_ptypes,values_ptypes A list of of column name-prototype pairs.
+#' @param names_transform,values_transform A list of column name-function pairs.
+#'   Use these arguments if you need to change the type of specific columns.
+#'   For example, `names_transform = list(week = as.integer)` would convert
+#'   a character week variable to an integer.
+#' @param names_ptypes,values_ptypes A list of column name-prototype pairs.
 #'   A prototype (or ptype for short) is a zero-length vector (like `integer()`
 #'   or `numeric()`) that defines the type, class, and attributes of a vector.
+#'   Use these arguments to confirm that the created columns are the types that
+#'   you expect.
 #'
 #'   If not specified, the type of the columns generated from `names_to` will
 #'   be character, and the type of the variables generated from `values_to`
 #'   will be the common type of the input columns used to generate them.
+#' @param ... Additional arguments passed on to methods.
 #' @export
 #' @examples
 #' # See vignette("pivot") for examples and explanation
@@ -66,7 +78,7 @@
 #' # Simplest case where column names are character data
 #' relig_income
 #' relig_income %>%
-#'  pivot_longer(-religion, names_to = "income", values_to = "count")
+#'   pivot_longer(-religion, names_to = "income", values_to = "count")
 #'
 #' # Slightly more complex case where columns have common prefix,
 #' # and missing missings are structural so should be dropped.
@@ -80,7 +92,7 @@
 #'    values_drop_na = TRUE
 #'  )
 #'
-#' # Multiple variables stored in colum names
+#' # Multiple variables stored in column names
 #' who %>% pivot_longer(
 #'   cols = new_sp_m014:newrel_f65,
 #'   names_to = c("diagnosis", "gender", "age"),
@@ -102,12 +114,35 @@ pivot_longer <- function(data,
                          names_sep = NULL,
                          names_pattern = NULL,
                          names_ptypes = list(),
+                         names_transform = list(),
                          names_repair = "check_unique",
                          values_to = "value",
                          values_drop_na = FALSE,
-                         values_ptypes = list()
+                         values_ptypes = list(),
+                         values_transform = list(),
+                         ...
                          ) {
 
+  ellipsis::check_dots_used()
+  UseMethod("pivot_longer")
+}
+
+#' @export
+pivot_longer.data.frame <- function(data,
+                                    cols,
+                                    names_to = "name",
+                                    names_prefix = NULL,
+                                    names_sep = NULL,
+                                    names_pattern = NULL,
+                                    names_ptypes = list(),
+                                    names_transform = list(),
+                                    names_repair = "check_unique",
+                                    values_to = "value",
+                                    values_drop_na = FALSE,
+                                    values_ptypes = list(),
+                                    values_transform = list(),
+                                    ...
+                                    ) {
   cols <- enquo(cols)
   spec <- build_longer_spec(data, !!cols,
     names_to = names_to,
@@ -115,13 +150,15 @@ pivot_longer <- function(data,
     names_prefix = names_prefix,
     names_sep = names_sep,
     names_pattern = names_pattern,
-    names_ptypes = names_ptypes
+    names_ptypes = names_ptypes,
+    names_transform = names_transform
   )
 
   pivot_longer_spec(data, spec,
     names_repair = names_repair,
     values_drop_na = values_drop_na,
-    values_ptypes = values_ptypes
+    values_ptypes = values_ptypes,
+    values_transform = values_transform
   )
 }
 
@@ -139,14 +176,41 @@ pivot_longer <- function(data,
 #'  column names turns into columns in the result.
 #'
 #'   Must be a data frame containing character `.name` and `.value` columns.
+#'   Additional columns in `spec` should be named to match columns in the
+#'   long format of the dataset and contain values corresponding to columns
+#'   pivoted from the wide format.
+#'   The special `.seq` variable is used to disambiguate rows internally;
+#'   it is automatically removed after pivotting.
+#'
+#' @examples
+#' # See vignette("pivot") for examples and explanation
+#'
+#' # Use `build_longer_spec()` to build `spec` using similar syntax to `pivot_longer()`
+#' # and run `pivot_longer_spec()` based on `spec`.
+#' spec <- relig_income %>% build_longer_spec(
+#'   cols = -religion,
+#'   names_to = "income",
+#'   values_to = "count"
+#' )
+#' spec
+#'
+#' pivot_longer_spec(relig_income, spec)
+#'
+#' # Is equivalent to:
+#' relig_income %>% pivot_longer(
+#'   cols = -religion,
+#'   names_to = "income",
+#'   values_to = "count")
+#'
 pivot_longer_spec <- function(data,
                               spec,
                               names_repair = "check_unique",
                               values_drop_na = FALSE,
-                              values_ptypes = list()
+                              values_ptypes = list(),
+                              values_transform = list()
                               ) {
   spec <- check_spec(spec)
-  spec <- deduplicate_names(spec, data)
+  spec <- deduplicate_spec(spec, data)
 
   # Quick hack to ensure that split() preserves order
   v_fct <- factor(spec$.value, levels = unique(spec$.value))
@@ -163,6 +227,9 @@ pivot_longer_spec <- function(data,
     val_cols[col_id] <- unname(as.list(data[cols]))
     val_cols[-col_id] <- list(rep(NA, nrow(data)))
 
+    if (has_name(values_transform, value)) {
+      val_cols <- lapply(val_cols, values_transform[[value]])
+    }
     val_type <- vec_ptype_common(!!!set_names(val_cols[col_id], cols), .ptype = values_ptypes[[value]])
     out <- vec_c(!!!val_cols, .ptype = val_type)
     # Interleave into correct order
@@ -183,13 +250,14 @@ pivot_longer_spec <- function(data,
   }
 
   # Join together df, spec, and val to produce final tibble
-  df_out <- drop_cols(data, spec$.name)
+  df_out <- drop_cols(as_tibble(data, .name_repair = "minimal"), spec$.name)
   out <- wrap_error_names(vec_cbind(
     vec_slice(df_out, rows$df_id),
     vec_slice(keys, rows$key_id),
     vec_slice(vals, rows$val_id),
     .name_repair = names_repair
   ))
+  out$.seq <- NULL
 
   reconstruct_tibble(data, out)
 }
@@ -202,16 +270,18 @@ build_longer_spec <- function(data, cols,
                               names_prefix = NULL,
                               names_sep = NULL,
                               names_pattern = NULL,
-                              names_ptypes = NULL) {
-  cols <- unname(tidyselect::vars_select(unique(names(data)), !!enquo(cols)))
+                              names_ptypes = NULL,
+                              names_transform = NULL) {
+  cols <- tidyselect::eval_select(enquo(cols), data[unique(names(data))])
+
   if (length(cols) == 0) {
     abort(glue::glue("`cols` must select at least one column."))
   }
 
   if (is.null(names_prefix)) {
-    names <- cols
+    names <- names(cols)
   } else {
-    names <- stringi::stri_replace_all_regex(cols, paste0("^", names_prefix), "")
+    names <- stringi::stri_replace_all_regex(names(cols), paste0("^", names_prefix), "")
   }
 
   if (length(names_to) > 1) {
@@ -227,10 +297,8 @@ build_longer_spec <- function(data, cols,
     } else {
       names <- str_extract(names, names_to, regex = names_pattern)
     }
-
-    if (".value" %in% names_to) {
-      values_to <- NULL
-    }
+  } else if (length(names_to) == 0) {
+    names <- tibble::new_tibble(x = list(), nrow = length(names))
   } else {
     if (!is.null(names_sep)) {
       abort("`names_sep` can not be used with length-1 `names_to`")
@@ -242,17 +310,29 @@ build_longer_spec <- function(data, cols,
     names <- tibble(!!names_to := names)
   }
 
+  if (".value" %in% names_to) {
+    values_to <- NULL
+  } else {
+    vec_assert(values_to, ptype = character(), size = 1)
+  }
+
   # optionally, cast variables generated from columns
   cast_cols <- intersect(names(names), names(names_ptypes))
   for (col in cast_cols) {
     names[[col]] <- vec_cast(names[[col]], names_ptypes[[col]])
   }
 
-  out <- tibble(.name = cols)
+  # transform cols
+  coerce_cols <- intersect(names(names), names(names_transform))
+  for (col in coerce_cols) {
+    f <- as_function(names_transform[[col]])
+    names[[col]] <- f(names[[col]])
+  }
+
+  out <- tibble(.name = names(cols))
   out[[".value"]] <- values_to
   out <- vec_cbind(out, names)
   out
-
 }
 
 drop_cols <- function(df, cols) {
@@ -265,16 +345,28 @@ drop_cols <- function(df, cols) {
   }
 }
 
-# Match spec to data, handling duplicated column names
-deduplicate_names <- function(spec, df) {
+# Ensure that there's a one-to-one match from spec to data by adding
+# a special .seq variable which is automatically removed after pivotting.
+deduplicate_spec <- function(spec, df) {
+
+  # Ensure each .name has a unique output identifier
+  key <- spec[setdiff(names(spec), ".name")]
+  if (vec_duplicate_any(key)) {
+    pos <- vec_group_loc(key)$loc
+    seq <- vector("integer", length = nrow(spec))
+    for (i in seq_along(pos)) {
+      seq[pos[[i]]] <- seq_along(pos[[i]])
+    }
+    spec$.seq <- seq
+  }
+
+  # Match spec to data, handling duplicated column names
   col_id <- vec_match(names(df), spec$.name)
   has_match <- !is.na(col_id)
 
   if (!vec_duplicate_any(col_id[has_match])) {
     return(spec)
   }
-
-  warn("Duplicate column names detected, adding .copy variable")
 
   spec <- vec_slice(spec, col_id[has_match])
   # Need to use numeric indices because names only match first
@@ -287,6 +379,6 @@ deduplicate_names <- function(spec, df) {
     copy[idx] <- seq_along(idx)
   }
 
-  spec$.copy <- copy
+  spec$.seq <- copy
   spec
 }

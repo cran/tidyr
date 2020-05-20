@@ -5,7 +5,7 @@
 \alias{unnest}
 \title{Nest and unnest}
 \usage{
-nest(.data, ..., .key = deprecated())
+nest(.data, ..., .names_sep = NULL, .key = deprecated())
 
 unnest(
   data,
@@ -24,9 +24,9 @@ unnest(
 \arguments{
 \item{.data}{A data frame.}
 
-\item{...}{Name-variable pairs of the form \code{new_col = c(col1, col2, col3)},
-that describe how you wish to nest existing columns into new columns.
-The right hand side can be any expression supported by tidyselect.
+\item{...}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> Columns to nest, specified
+using name-variable pairs of the form \code{new_col = c(col1, col2, col3)}.
+The right hand side can be any valid tidy select expression.
 
 \Sexpr[results=rd, stage=render]{lifecycle::badge("deprecated")}:
 previously you could write \code{df \%>\% nest(x, y, z)} and \code{df \%>\% unnest(x, y, z)}. Convert to \code{df \%>\% nest(data = c(x, y, z))}.
@@ -41,11 +41,11 @@ No longer needed because of the new \code{new_col = c(col1, col2, col3)} syntax.
 
 \item{data}{A data frame.}
 
-\item{cols}{Names of columns to unnest.
+\item{cols}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> Columns to unnest.
 
-If you \code{unnest()} multiple columns, parallel entries must compatible
-sizes, i.e. they're either equal or length 1 (following the standard
-tidyverse recycling rules).}
+If you \code{unnest()} multiple columns, parallel entries must be of
+compatible sizes, i.e. they're either equal or length 1 (following the
+standard tidyverse recycling rules).}
 
 \item{keep_empty}{By default, you get one row of output for each element
 of the list your unchopping/unnesting. This means that if there's a
@@ -58,12 +58,16 @@ of missing values.}
 overriding the default that will be guessed from the combination of
 individual values.}
 
-\item{names_sep}{If \code{NULL}, the default, the names of new columns will
-come directly from the inner data frame.
+\item{names_sep, .names_sep}{If \code{NULL}, the default, the names will be left
+as is. In \code{nest()}, inner names will come from the former outer names;
+in \code{unnest()}, the new outer names will come from the inner names.
 
-If a string, the names of the new columns will be formed by pasting
-together the outer column name with the inner names, separated by
-\code{names_sep}.}
+If a string, the inner and outer names will be used together. In \code{nest()},
+the names of the new outer columns will be formed by pasting together the
+outer and the inner column names, separated by \code{names_sep}. In \code{unnest()},
+the new inner names will have the outer names (+ \code{names_sep}) automatically
+stripped. This makes \code{names_sep} roughly symmetric between nesting and
+unnesting.}
 
 \item{names_repair}{Used to check that output data frame has valid
 names. Must be one of the following options:
@@ -114,14 +118,15 @@ unnest <- unnest_legacy
 
 \section{Grouped data frames}{
 
-\code{df \%>\% nest(x, y)} specifies the columns to be nested; i.e. the columns that
-will appear in the inner data frame. Alternatively, you can \code{nest()} a
-grouped data frame created by \code{\link[dplyr:group_by]{dplyr::group_by()}}. The grouping variables
-remain in the outer data frame and the others are nested. The result
-preserves the grouping of the input.
+\code{df \%>\% nest(data = c(x, y))} specifies the columns to be nested; i.e. the
+columns that will appear in the inner data frame. Alternatively, you can
+\code{nest()} a grouped data frame created by \code{\link[dplyr:group_by]{dplyr::group_by()}}. The grouping
+variables remain in the outer data frame and the others are nested. The
+result preserves the grouping of the input.
 
 Variables supplied to \code{nest()} will override grouping variables so that
-\code{df \%>\% group_by(x, y) \%>\% nest(z)} will be equivalent to \code{df \%>\% nest(z)}.
+\code{df \%>\% group_by(x, y) \%>\% nest(data = -z)} will be equivalent to
+\code{df \%>\% nest(data = -z)}.
 }
 
 \examples{

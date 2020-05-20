@@ -12,10 +12,12 @@ unchop(data, cols, keep_empty = FALSE, ptype = NULL)
 \arguments{
 \item{data}{A data frame.}
 
-\item{cols}{Column to chop or unchop (automatically quoted).
+\item{cols}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> Columns to chop or unchop
+(automatically quoted).
 
-This should be a list-column containing generalised vectors (e.g.
-any mix of \code{NULL}s, atomic vector, S3 vectors, a lists, or data frames).}
+For \code{unchop()}, each column should be a list-column containing generalised
+vectors (e.g. any mix of \code{NULL}s, atomic vector, S3 vectors, a lists,
+or data frames).}
 
 \item{keep_empty}{By default, you get one row of output for each element
 of the list your unchopping/unnesting. This means that if there's a
@@ -35,12 +37,22 @@ Chopping and unchopping preserve the width of a data frame, changing its
 length. \code{chop()} makes \code{df} shorter by converting rows within each group
 into list-columns. \code{unchop()} makes \code{df} longer by expanding list-columns
 so that each element of the list-column gets its own row in the output.
+\code{chop()} and \code{unchop()} are building blocks for more complicated functions
+(like \code{\link[=unnest]{unnest()}}, \code{\link[=unnest_longer]{unnest_longer()}}, and \code{\link[=unnest_wider]{unnest_wider()}}) and are generally
+more suitable for programming than interactive data analysis.
 }
 \details{
 Generally, unchopping is more useful than chopping because it simplifies
 a complex data structure, and \code{\link[=nest]{nest()}}ing is usually more appropriate
 that \code{chop()}ing` since it better preserves the connections between
 observations.
+
+\code{chop()} creates list-columns of class \code{\link[vctrs:list_of]{vctrs::list_of()}} to ensure
+consistent behaviour when the chopped data frame is emptied. For
+instance this helps getting back the original column types after
+the roundtrip chop and unchop. Because \verb{<list_of>} keeps tracks of
+the type of its elements, \code{unchop()} is able to reconstitute the
+correct vector type even for empty list-columns.
 }
 \examples{
 # Chop ==============================================================
@@ -55,6 +67,11 @@ df \%>\% nest(data = c(y, z))
 df <- tibble(x = 1:4, y = list(integer(), 1L, 1:2, 1:3))
 df \%>\% unchop(y)
 df \%>\% unchop(y, keep_empty = TRUE)
+
+# Incompatible types -------------------------------------------------
+# If the list-col contains types that can not be natively
+df <- tibble(x = 1:2, y = list("1", 1:3))
+try(df \%>\% unchop(y))
 
 # Unchopping data frames -----------------------------------------------------
 # Unchopping a list-col of data frames must generate a df-col because

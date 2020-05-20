@@ -85,11 +85,6 @@ tidyr_legacy <- function(nms, prefix = "V", sep = "") {
 }
 
 
-drop_null <- function(x) {
-  is_null <- vapply(x, is.null, logical(1))
-  x[!is_null]
-}
-
 # Work around bug in base R where data[x] <- data[x] turns a 0-col data frame-col
 # into a list of NULLs
 update_cols <- function(old, new) {
@@ -97,16 +92,6 @@ update_cols <- function(old, new) {
     old[[col]] <- new[[col]]
   }
   old
-}
-
-init_col <- function(x) {
-  if (is_null(x)) {
-    unspecified(1)
-  } else if (vec_is_empty(x)) {
-    vec_init(x, 1)
-  } else {
-    x
-  }
 }
 
 # Own copy since it might disappear from vctrs since it
@@ -117,4 +102,12 @@ vec_repeat <- function(x, each = 1L, times = 1L) {
 
   idx <- rep(vec_seq_along(x), times = times, each = each)
   vec_slice(x, idx)
+}
+
+check_present <- function(x) {
+  arg <- ensym(x)
+  if (missing(x)) {
+    abort(paste0("Argument `", arg, "` is missing with no default"))
+  }
+
 }

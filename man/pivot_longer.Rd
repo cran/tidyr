@@ -12,23 +12,32 @@ pivot_longer(
   names_sep = NULL,
   names_pattern = NULL,
   names_ptypes = list(),
+  names_transform = list(),
   names_repair = "check_unique",
   values_to = "value",
   values_drop_na = FALSE,
-  values_ptypes = list()
+  values_ptypes = list(),
+  values_transform = list(),
+  ...
 )
 }
 \arguments{
 \item{data}{A data frame to pivot.}
 
-\item{cols}{Columns to pivot into longer format. This takes a tidyselect
-specification.}
+\item{cols}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> Columns to pivot into
+longer format.}
 
 \item{names_to}{A string specifying the name of the column to create
 from the data stored in the column names of \code{data}.
 
 Can be a character vector, creating multiple columns, if \code{names_sep}
-or \code{names_pattern} is provided.}
+or \code{names_pattern} is provided. In this case, there are two special
+values you can take advantage of:
+\itemize{
+\item \code{NA} will discard that component of the name.
+\item \code{.value} indicates that component of the name defines the name of the
+column containing the cell values, overriding \code{values_to}.
+}}
 
 \item{names_prefix}{A regular expression used to remove matching text
 from the start of each variable name.}
@@ -43,19 +52,26 @@ be a numeric vector (specifying positions to break on), or a single string
 \code{names_pattern} takes the same specification as \code{\link[=extract]{extract()}}, a regular
 expression containing matching groups (\verb{()}).
 
-If these arguments does not give you enough control, use
+If these arguments do not give you enough control, use
 \code{pivot_longer_spec()} to create a spec object and process manually as
 needed.}
 
-\item{names_ptypes, values_ptypes}{A list of of column name-prototype pairs.
+\item{names_ptypes, values_ptypes}{A list of column name-prototype pairs.
 A prototype (or ptype for short) is a zero-length vector (like \code{integer()}
 or \code{numeric()}) that defines the type, class, and attributes of a vector.
+Use these arguments to confirm that the created columns are the types that
+you expect.
 
 If not specified, the type of the columns generated from \code{names_to} will
 be character, and the type of the variables generated from \code{values_to}
 will be the common type of the input columns used to generate them.}
 
-\item{names_repair}{What happen if the output has invalid column names?
+\item{names_transform, values_transform}{A list of column name-function pairs.
+Use these arguments if you need to change the type of specific columns.
+For example, \code{names_transform = list(week = as.integer)} would convert
+a character week variable to an integer.}
+
+\item{names_repair}{What happens if the output has invalid column names?
 The default, \code{"check_unique"} is to error if the columns are duplicated.
 Use \code{"minimal"} to allow duplicates in the output, or \code{"unique"} to
 de-duplicated by adding numeric suffixes. See \code{\link[vctrs:vec_as_names]{vctrs::vec_as_names()}}
@@ -71,6 +87,8 @@ existing column names.}
 in the \code{value_to} column. This effectively converts explicit missing values
 to implicit missing values, and should generally be used only when missing
 values in \code{data} were created by its structure.}
+
+\item{...}{Additional arguments passed on to methods.}
 }
 \description{
 \Sexpr[results=rd, stage=render]{lifecycle::badge("maturing")}
@@ -83,7 +101,7 @@ Learn more in \code{vignette("pivot")}.
 }
 \details{
 \code{pivot_longer()} is an updated approach to \code{\link[=gather]{gather()}}, designed to be both
-simpler to use and to handle more use cases. We recomend you use
+simpler to use and to handle more use cases. We recommend you use
 \code{pivot_longer()} for new code; \code{gather()} isn't going away but is no longer
 under active development.
 }
@@ -93,7 +111,7 @@ under active development.
 # Simplest case where column names are character data
 relig_income
 relig_income \%>\%
- pivot_longer(-religion, names_to = "income", values_to = "count")
+  pivot_longer(-religion, names_to = "income", values_to = "count")
 
 # Slightly more complex case where columns have common prefix,
 # and missing missings are structural so should be dropped.
@@ -107,7 +125,7 @@ billboard \%>\%
    values_drop_na = TRUE
  )
 
-# Multiple variables stored in colum names
+# Multiple variables stored in column names
 who \%>\% pivot_longer(
   cols = new_sp_m014:newrel_f65,
   names_to = c("diagnosis", "gender", "age"),

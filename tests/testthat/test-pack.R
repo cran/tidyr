@@ -17,6 +17,12 @@ test_that("packing no columns returns input", {
   expect_equal(pack(df), df)
 })
 
+test_that("can strip outer names from inner names", {
+  df <- tibble(ax = 1, ay = 2)
+  out <- pack(df, a = c(ax, ay), .names_sep = "")
+  expect_named(out$a, c("x", "y"))
+})
+
 test_that("all inputs must be named", {
   df <- tibble(a1 = 1, a2 = 2, b1 = 1, b2 = 2)
   expect_error(pack(df, a = c(a1, a2), c(b1, b2)), "must be named")
@@ -62,22 +68,17 @@ test_that("can unpack 0-row dataframe", {
 })
 
 test_that("can control name_repair", {
-  df <- tibble(x = 1, y = tibble(a = 2), z = tibble(a = 3))
+  skip_if(packageVersion("vctrs") > "0.2.4")
 
-  if (packageVersion("tibble") > "2.99") {
-    expect_error(df %>% unpack(c(y, z)), class = "rlang_error")
-  } else {
-    expect_error(df %>% unpack(c(y, z)), "must not be duplicated")
-  }
+  verify_output(test_path("test-pack-name-repair.txt"), {
+    df <- tibble(x = 1, y = tibble(a = 2), z = tibble(a = 3))
 
-  expect_message(
-    out <- df %>% unpack(c(y, z), names_repair = "unique"),
-    "New names"
-  )
-  expect_named(out, c("x", "a...2", "a...3"))
+    df %>% unpack(c(y, z))
 
-  out <- df %>% unpack(c(y, z), names_repair = "minimal")
-  expect_named(out, c("x", "a", "a"))
+    df %>% unpack(c(y, z), names_repair = "unique")
+
+    df %>% unpack(c(y, z), names_repair = "minimal")
+  })
 })
 
 test_that("can choose to add separtor", {

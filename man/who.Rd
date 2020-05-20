@@ -6,7 +6,7 @@
 \alias{population}
 \title{World Health Organization TB data}
 \format{
-A dataset with the variables
+\code{who}: a data frame with 7,240 rows and the columns:
 \describe{
 \item{country}{Country name}
 \item{iso2, iso3}{2 & 3 letter ISO country codes}
@@ -15,7 +15,12 @@ A dataset with the variables
 Column names encode three variables that describe the group (see details).}
 }
 
-An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) with 4060 rows and 3 columns.
+\code{population}: a data frame with 4,060 rows and three columns:
+\describe{
+\item{country}{Country name}
+\item{year}{Year}
+\item{population}{Population}
+}
 }
 \source{
 \url{https://www.who.int/tb/country/data/download/en/}

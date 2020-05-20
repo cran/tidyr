@@ -10,23 +10,28 @@ pivot_wider(
   names_from = name,
   names_prefix = "",
   names_sep = "_",
+  names_glue = NULL,
+  names_sort = FALSE,
   names_repair = "check_unique",
   values_from = value,
   values_fill = NULL,
-  values_fn = NULL
+  values_fn = NULL,
+  ...
 )
 }
 \arguments{
 \item{data}{A data frame to pivot.}
 
-\item{id_cols}{A set of columns that uniquely identifies each observation.
-Defaults to all columns in \code{data} except for the columns specified in
-\code{names_from} and \code{values_from}. Typically used when you have additional
-variables that is directly related.}
+\item{id_cols}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> A set of columns that
+uniquely identifies each observation. Defaults to all columns in \code{data}
+except for the columns specified in \code{names_from} and \code{values_from}.
+Typically used when you have redundant variables, i.e. variables whose
+values are perfectly correlated with existing variables.}
 
-\item{names_from, values_from}{A pair of arguments describing which column
-(or columns) to get the name of the output column (\code{name_from}), and
-which column (or columns) to get the cell values from (\code{values_from}).
+\item{names_from, values_from}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> A pair of
+arguments describing which column (or columns) to get the name of the
+output column (\code{names_from}), and which column (or columns) to get the
+cell values from (\code{values_from}).
 
 If \code{values_from} contains multiple values, the value will be added to the
 front of the output column.}
@@ -39,19 +44,33 @@ create syntactic variable names.}
 variables, this will be used to join their values together into a single
 string to use as a column name.}
 
-\item{names_repair}{What happen if the output has invalid column names?
+\item{names_glue}{Instead of \code{names_sep} and \code{names_prefix}, you can supply
+a glue specification that uses the \code{names_from} columns (and special
+\code{.value}) to create custom column names.}
+
+\item{names_sort}{Should the column names be sorted? If \code{FALSE}, the default,
+column names are ordered by first appearance.}
+
+\item{names_repair}{What happens if the output has invalid column names?
 The default, \code{"check_unique"} is to error if the columns are duplicated.
 Use \code{"minimal"} to allow duplicates in the output, or \code{"unique"} to
 de-duplicated by adding numeric suffixes. See \code{\link[vctrs:vec_as_names]{vctrs::vec_as_names()}}
 for more options.}
 
-\item{values_fill}{Optionally, a named list specifying what each \code{value}
-should be filled in with when missing.}
+\item{values_fill}{Optionally, a (scalar) value that specifies what each
+\code{value} should be filled in with when missing.
 
-\item{values_fn}{Optionally, a named list providing a function that will be
-applied to the \code{value} in each cell in the output. You will typically
-use this when the combination of \code{id_cols} and \code{value} column does not
-uniquely identify an observation.}
+This can be a named list if you want to apply different aggregations
+to different value columns.}
+
+\item{values_fn}{Optionally, a function applied to the \code{value} in each cell
+in the output. You will typically use this when the combination of
+\code{id_cols} and \code{value} column does not uniquely identify an observation.
+
+This can be a named list if you want to apply different aggregations
+to different value columns.}
+
+\item{...}{Additional arguments passed on to methods.}
 }
 \description{
 \Sexpr[results=rd, stage=render]{lifecycle::badge("maturing")}
@@ -64,7 +83,7 @@ Learn more in \code{vignette("pivot")}.
 }
 \details{
 \code{pivot_wider()} is an updated approach to \code{\link[=spread]{spread()}}, designed to be both
-simpler to use and to handle more use cases. We recomend you use
+simpler to use and to handle more use cases. We recommend you use
 \code{pivot_wider()} for new code; \code{spread()} isn't going away but is no longer
 under active development.
 }
@@ -76,15 +95,27 @@ fish_encounters \%>\%
   pivot_wider(names_from = station, values_from = seen)
 # Fill in missing values
 fish_encounters \%>\%
-  pivot_wider(
-    names_from = station,
-    values_from = seen,
-    values_fill = list(seen = 0)
-  )
+  pivot_wider(names_from = station, values_from = seen, values_fill = 0)
 
 # Generate column names from multiple variables
+us_rent_income
 us_rent_income \%>\%
   pivot_wider(names_from = variable, values_from = c(estimate, moe))
+
+# When there are multiple `names_from` or `values_from`, you can use
+# use `names_sep` or `names_glue` to control the output variable names
+us_rent_income \%>\%
+  pivot_wider(
+    names_from = variable,
+    names_sep = ".",
+    values_from = c(estimate, moe)
+  )
+us_rent_income \%>\%
+  pivot_wider(
+    names_from = variable,
+    names_glue = "{variable}_{.value}",
+    values_from = c(estimate, moe)
+  )
 
 # Can perform aggregation with values_fn
 warpbreaks <- as_tibble(warpbreaks[c("wool", "tension", "breaks")])
@@ -93,7 +124,7 @@ warpbreaks \%>\%
   pivot_wider(
     names_from = wool,
     values_from = breaks,
-    values_fn = list(breaks = mean)
+    values_fn = mean
   )
 }
 \seealso{
