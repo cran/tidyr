@@ -1,8 +1,6 @@
 #' Rectangle a nested list into a tidy tibble
 #'
 #' @description
-#' \Sexpr[results=rd, stage=render]{lifecycle::badge("maturing")}
-#'
 #' `hoist()`, `unnest_longer()`, and `unnest_wider()` provide tools for
 #' rectangling, collapsing deeply nested lists into regular columns.
 #' `hoist()` allows you to selectively pull components of a list-column out
@@ -126,8 +124,12 @@ hoist <- function(.data, .col, ..., .remove = TRUE, .simplify = TRUE, .ptype = l
 
   pluckers <- check_pluckers(...)
 
+  # In R <4.1, `::` is quite slow and this is a tight loop, so eliminating
+  # the lookup has a large performance impact:
+  # https://github.com/tidyverse/tidyr/issues/1001
+  pluck <- purrr::pluck
   new_cols <- map(pluckers, function(idx) {
-    map(x, ~ purrr::pluck(.x, !!!idx))
+    map(x, ~ pluck(.x, !!!idx))
   })
   new_cols <- map2(
     new_cols,
@@ -366,7 +368,7 @@ simplify_col <- function(x, nm, ptype = list(), transform = list(), simplify = F
     x <- map(x, as_function(transform))
   }
 
-  if (!simplify) {
+  if (!simplify || !is.list(x)) {
     return(x)
   }
 

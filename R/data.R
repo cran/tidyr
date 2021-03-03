@@ -22,7 +22,7 @@
 #'   54 years of age, `5564` = 55 to 64 years of age, `65` = 65 years
 #'   of age or older).
 #'
-#' @source <https://www.who.int/tb/country/data/download/en/>
+#' @source <https://www.who.int/teams/global-tuberculosis-programme/data>
 "who"
 
 #' @rdname who
@@ -48,7 +48,7 @@
 #' The data is a subset of the data contained in the World Health
 #' Organization Global Tuberculosis Report
 #'
-#' @source <https://www.who.int/tb/country/data/download/en/>
+#' @source <https://www.who.int/teams/global-tuberculosis-programme/data>
 #' @format NULL
 "table1"
 
@@ -160,12 +160,12 @@
 #' (downloaded March 2019)
 "construction"
 
-#' Song rankings for billboard top 100 in the year 2000
+#' Song rankings for Billboard top 100 in the year 2000
 #'
 #' @format A dataset with variables:
 #' \describe{
 #'   \item{artist}{Artist name}
-#'   \item{track}{Song name},
+#'   \item{track}{Song name}
 #'   \item{date.enter}{Date the song entered the top 100}
 #'   \item{wk1 -- wk76}{Rank of the song in each week after it entered}
 #' }
