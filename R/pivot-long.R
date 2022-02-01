@@ -16,16 +16,25 @@
 #' @param data A data frame to pivot.
 #' @param cols <[`tidy-select`][tidyr_tidy_select]> Columns to pivot into
 #'   longer format.
-#' @param names_to A string specifying the name of the column to create
-#'   from the data stored in the column names of `data`.
+#' @param names_to A character vector specifying the new column or columns to
+#'   create from the information stored in the column names of `data` specified
+#'   by `cols`.
 #'
-#'   Can be a character vector, creating multiple columns, if `names_sep`
-#'   or `names_pattern` is provided. In this case, there are two special
-#'   values you can take advantage of:
+#'   * If length 0, or if `NULL` is supplied, no columns will be created.
 #'
-#'   * `NA` will discard that component of the name.
-#'   * `.value` indicates that component of the name defines the name of the
-#'     column containing the cell values, overriding `values_to`.
+#'   * If length 1, a single column will be created which will contain the
+#'     column names specified by `cols`.
+#'
+#'   * If length >1, multiple columns will be created. In this case, one of
+#'     `names_sep` or `names_pattern` must be supplied to specify how the
+#'     column names should be split. There are also two additional character
+#'     values you can take advantage of:
+#'
+#'     * `NA` will discard the corresponding component of the column name.
+#'
+#'     * `".value"` indicates that the corresponding component of the column
+#'       name defines the name of the output column containing the cell values,
+#'       overriding `values_to` entirely.
 #' @param names_prefix A regular expression used to remove matching text
 #'   from the start of each variable name.
 #' @param names_sep,names_pattern If `names_to` contains multiple values,
@@ -55,21 +64,28 @@
 #'   in the `value_to` column. This effectively converts explicit missing values
 #'   to implicit missing values, and should generally be used only when missing
 #'   values in `data` were created by its structure.
-#' @param names_transform,values_transform A list of column name-function pairs.
-#'   Use these arguments if you need to change the types of specific columns.
-#'   For example, `names_transform = list(week = as.integer)` would convert
-#'   a character variable called `week` to an integer.
+#' @param names_transform,values_transform Optionally, a list of column
+#'   name-function pairs. Alternatively, a single function can be supplied,
+#'   which will be applied to all columns. Use these arguments if you need to
+#'   change the types of specific columns. For example, `names_transform =
+#'   list(week = as.integer)` would convert a character variable called `week`
+#'   to an integer.
 #'
 #'   If not specified, the type of the columns generated from `names_to` will
 #'   be character, and the type of the variables generated from `values_to`
 #'   will be the common type of the input columns used to generate them.
-#' @param names_ptypes,values_ptypes A list of column name-prototype pairs.
-#'   A prototype (or ptype for short) is a zero-length vector (like `integer()`
-#'   or `numeric()`) that defines the type, class, and attributes of a vector.
-#'   Use these arguments if you want to confirm that the created columns are
-#'   the types that you expect. Note that if you want to change (instead of confirm)
-#'   the types of specific columns, you should use `names_transform` or
-#'   `values_transform` instead.
+#' @param names_ptypes,values_ptypes Optionally, a list of column name-prototype
+#'   pairs. Alternatively, a single empty prototype can be supplied, which will
+#'   be applied to all columns. A prototype (or ptype for short) is a
+#'   zero-length vector (like `integer()` or `numeric()`) that defines the type,
+#'   class, and attributes of a vector. Use these arguments if you want to
+#'   confirm that the created columns are the types that you expect. Note that
+#'   if you want to change (instead of confirm) the types of specific columns,
+#'   you should use `names_transform` or `values_transform` instead.
+#'
+#'   For backwards compatibility reasons, supplying `list()` is interpreted as
+#'   being identical to `NULL` rather than as using a list prototype on all
+#'   columns. Expect this to change in the future.
 #' @param ... Additional arguments passed on to methods.
 #' @export
 #' @examples
@@ -84,13 +100,13 @@
 #' # and missing missings are structural so should be dropped.
 #' billboard
 #' billboard %>%
-#'  pivot_longer(
-#'    cols = starts_with("wk"),
-#'    names_to = "week",
-#'    names_prefix = "wk",
-#'    values_to = "rank",
-#'    values_drop_na = TRUE
-#'  )
+#'   pivot_longer(
+#'     cols = starts_with("wk"),
+#'     names_to = "week",
+#'     names_prefix = "wk",
+#'     values_to = "rank",
+#'     values_drop_na = TRUE
+#'   )
 #'
 #' # Multiple variables stored in column names
 #' who %>% pivot_longer(
@@ -103,23 +119,24 @@
 #' # Multiple observations per row
 #' anscombe
 #' anscombe %>%
-#'  pivot_longer(everything(),
-#'    names_to = c(".value", "set"),
-#'    names_pattern = "(.)(.)"
-#'  )
+#'   pivot_longer(
+#'     everything(),
+#'     names_to = c(".value", "set"),
+#'     names_pattern = "(.)(.)"
+#'   )
 pivot_longer <- function(data,
                          cols,
                          names_to = "name",
                          names_prefix = NULL,
                          names_sep = NULL,
                          names_pattern = NULL,
-                         names_ptypes = list(),
-                         names_transform = list(),
+                         names_ptypes = NULL,
+                         names_transform = NULL,
                          names_repair = "check_unique",
                          values_to = "value",
                          values_drop_na = FALSE,
-                         values_ptypes = list(),
-                         values_transform = list(),
+                         values_ptypes = NULL,
+                         values_transform = NULL,
                          ...
                          ) {
 
@@ -134,13 +151,13 @@ pivot_longer.data.frame <- function(data,
                                     names_prefix = NULL,
                                     names_sep = NULL,
                                     names_pattern = NULL,
-                                    names_ptypes = list(),
-                                    names_transform = list(),
+                                    names_ptypes = NULL,
+                                    names_transform = NULL,
                                     names_repair = "check_unique",
                                     values_to = "value",
                                     values_drop_na = FALSE,
-                                    values_ptypes = list(),
-                                    values_transform = list(),
+                                    values_ptypes = NULL,
+                                    values_transform = NULL,
                                     ...
                                     ) {
   cols <- enquo(cols)
@@ -206,20 +223,28 @@ pivot_longer_spec <- function(data,
                               spec,
                               names_repair = "check_unique",
                               values_drop_na = FALSE,
-                              values_ptypes = list(),
-                              values_transform = list()
+                              values_ptypes = NULL,
+                              values_transform = NULL
                               ) {
-  spec <- check_spec(spec)
+  spec <- check_pivot_spec(spec)
   spec <- deduplicate_spec(spec, data)
 
   # Quick hack to ensure that split() preserves order
   v_fct <- factor(spec$.value, levels = unique(spec$.value))
   values <- split(spec$.name, v_fct)
+  value_names <- names(values)
   value_keys <- split(spec[-(1:2)], v_fct)
   keys <- vec_unique(spec[-(1:2)])
 
-  vals <- set_names(vec_init(list(), length(values)), names(values))
-  for (value in names(values)) {
+  if (identical(values_ptypes, list())) {
+    # TODO: Remove me after https://github.com/tidyverse/tidyr/issues/1296
+    values_ptypes <- NULL
+  }
+  values_ptypes <- check_list_of_ptypes(values_ptypes, value_names, "values_ptypes")
+  values_transform <- check_list_of_functions(values_transform, value_names, "values_transform")
+
+  vals <- set_names(vec_init(list(), length(values)), value_names)
+  for (value in value_names) {
     cols <- values[[value]]
     col_id <- vec_match(value_keys[[value]], keys)
 
@@ -262,7 +287,8 @@ pivot_longer_spec <- function(data,
 
 #' @rdname pivot_longer_spec
 #' @export
-build_longer_spec <- function(data, cols,
+build_longer_spec <- function(data,
+                              cols,
                               names_to = "name",
                               values_to = "value",
                               names_prefix = NULL,
@@ -271,41 +297,53 @@ build_longer_spec <- function(data, cols,
                               names_ptypes = NULL,
                               names_transform = NULL) {
   cols <- tidyselect::eval_select(enquo(cols), data[unique(names(data))])
+  cols <- names(cols)
 
   if (length(cols) == 0) {
     abort(glue::glue("`cols` must select at least one column."))
   }
 
   if (is.null(names_prefix)) {
-    names <- names(cols)
+    names <- cols
   } else {
-    names <- gsub(paste0("^", names_prefix), "", names(cols))
+    names <- gsub(vec_paste0("^", names_prefix), "", cols)
   }
 
-  if (length(names_to) > 1) {
-    if (!xor(is.null(names_sep), is.null(names_pattern))) {
+  if (is.null(names_to)) {
+    names_to <- character(0L)
+  }
+  if (!is.character(names_to)) {
+    abort("`names_to` must be a character vector or `NULL`.")
+  }
+
+  n_names_to <- length(names_to)
+  has_names_sep <- !is.null(names_sep)
+  has_names_pattern <- !is.null(names_pattern)
+
+  if (n_names_to == 0L) {
+    names <- tibble::new_tibble(x = list(), nrow = length(names))
+  } else if (n_names_to == 1L) {
+    if (has_names_sep) {
+      abort("`names_sep` can't be used with a length 1 `names_to`.")
+    }
+    if (has_names_pattern) {
+      names <- str_extract(names, names_to, regex = names_pattern)[[1]]
+    }
+
+    names <- tibble(!!names_to := names)
+  } else {
+    if (!xor(has_names_sep, has_names_pattern)) {
       abort(glue::glue(
         "If you supply multiple names in `names_to` you must also supply one",
         " of `names_sep` or `names_pattern`."
       ))
     }
 
-    if (!is.null(names_sep)) {
+    if (has_names_sep) {
       names <- str_separate(names, names_to, sep = names_sep)
     } else {
       names <- str_extract(names, names_to, regex = names_pattern)
     }
-  } else if (length(names_to) == 0) {
-    names <- tibble::new_tibble(x = list(), nrow = length(names))
-  } else {
-    if (!is.null(names_sep)) {
-      abort("`names_sep` can not be used with length-1 `names_to`")
-    }
-    if (!is.null(names_pattern)) {
-      names <- str_extract(names, names_to, regex = names_pattern)[[1]]
-    }
-
-    names <- tibble(!!names_to := names)
   }
 
   if (".value" %in% names_to) {
@@ -314,20 +352,26 @@ build_longer_spec <- function(data, cols,
     vec_assert(values_to, ptype = character(), size = 1)
   }
 
-  # optionally, cast variables generated from columns
-  cast_cols <- intersect(names(names), names(names_ptypes))
-  for (col in cast_cols) {
-    names[[col]] <- vec_cast(names[[col]], names_ptypes[[col]])
+  if (identical(names_ptypes, list())) {
+    # TODO: Remove me after https://github.com/tidyverse/tidyr/issues/1296
+    names_ptypes <- NULL
   }
+  names_ptypes <- check_list_of_ptypes(names_ptypes, names(names), "names_ptypes")
+  names_transform <- check_list_of_functions(names_transform, names(names), "names_transform")
 
-  # transform cols
-  coerce_cols <- intersect(names(names), names(names_transform))
-  for (col in coerce_cols) {
-    f <- as_function(names_transform[[col]])
+  # Optionally, transform cols
+  for (col in names(names_transform)) {
+    f <- names_transform[[col]]
     names[[col]] <- f(names[[col]])
   }
 
-  out <- tibble(.name = names(cols))
+  # Optionally, cast variables generated from columns
+  for (col in names(names_ptypes)) {
+    ptype <- names_ptypes[[col]]
+    names[[col]] <- vec_cast(names[[col]], ptype)
+  }
+
+  out <- tibble(.name = cols)
   out[[".value"]] <- values_to
   out <- vec_cbind(out, names)
   out

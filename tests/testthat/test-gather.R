@@ -118,22 +118,30 @@ test_that("gather throws error for POSIXlt", {
   df <- data.frame(y = 1)
   df$x <- as.POSIXlt(Sys.time())
 
-  expect_error(gather(df, key, val, -x), "a POSIXlt")
-  expect_error(gather(df, key, val, -y), "a POSIXlt")
+  expect_snapshot({
+    (expect_error(gather(df, key, val, -x)))
+    (expect_error(gather(df, key, val, -y)))
+  })
 })
 
 test_that("gather throws error for weird objects", {
   df <- data.frame(y = 1)
   df$x <- expression(x)
-  expect_error(gather(df, key, val, -x), "atomic vectors or lists")
-  expect_error(gather(df, key, val, -y), "atomic vectors or lists")
+
+  expect_snapshot({
+    (expect_error(gather(df, key, val, -x)))
+    (expect_error(gather(df, key, val, -y)))
+  })
 
   e <- new.env(parent = emptyenv())
   e$x <- 1
   df <- data.frame(y = 1)
   df$x <- e
-  expect_error(gather(df, key, val, -x), "atomic vectors or list")
-  expect_error(gather(df, key, val, -y), "atomic vectors or list")
+
+  expect_snapshot({
+    (expect_error(gather(df, key, val, -x)))
+    (expect_error(gather(df, key, val, -y)))
+  })
 })
 
 
@@ -143,10 +151,7 @@ test_that("factors coerced to characters, not integers", {
     v2 = factor(letters[1:3])
   )
 
-  expect_warning(
-    out <- gather(df, k, v),
-    "attributes are not identical across measure variables"
-  )
+  expect_snapshot(out <- gather(df, k, v))
 
   expect_equal(out$v, c(1:3, letters[1:3]))
 })
@@ -168,13 +173,10 @@ test_that("common attributes are preserved", {
 
 test_that("varying attributes are dropped with a warning", {
   df <- data.frame(
-    date1 = as.POSIXct(Sys.Date()),
-    date2 = Sys.Date() + 10
+    date1 = as.POSIXct("2019-01-01", tz = "UTC"),
+    date2 = as.Date("2019-01-01")
   )
-  expect_warning(
-    gather(df, k, v),
-    "attributes are not identical across measure variables"
-  )
+  expect_snapshot(gather(df, k, v))
 })
 
 test_that("gather preserves OBJECT bit on e.g. POSIXct", {

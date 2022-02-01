@@ -55,8 +55,8 @@
 #' df %>% separate(x, c("key", "value"), ": ", extra = "merge")
 #'
 #' # Use regular expressions to separate on multiple characters:
-#' df <- data.frame(x = c(NA, "x?y", "x.z", "y:z"))
-#' df %>% separate(x, c("A","B"), sep = "([.?:])")
+#' df <- data.frame(x = c(NA, "a1b", "c4d", "e9g"))
+#' df %>% separate(x, c("A","B"), sep = "[0-9]")
 #'
 #' # convert = TRUE detects column classes:
 #' df <- data.frame(x = c("x:1", "x:2", "y:4", "z", NA))
@@ -87,6 +87,8 @@ separate.data.frame <- function(data, col, into, sep = "[^[:alnum:]]+",
 }
 
 str_separate <- function(x, into, sep, convert = FALSE, extra = "warn", fill = "warn") {
+  check_not_stringr_pattern(sep, "sep")
+
   if (!is.character(into)) {
     abort("`into` must be a character vector")
   }
@@ -179,4 +181,12 @@ list_indices <- function(x, max = 20) {
   }
 
   paste(x, collapse = ", ")
+}
+
+check_not_stringr_pattern <- function(x, arg) {
+  if (inherits_any(x, c("pattern", "stringr_pattern"))) {
+    abort(glue("`{arg}` can't use modifiers from stringr."))
+  }
+
+  invisible(x)
 }
