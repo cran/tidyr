@@ -15,12 +15,12 @@ nesting(..., .name_repair = "check_unique")
 \arguments{
 \item{data}{A data frame.}
 
-\item{...}{Specification of columns to expand. Columns can be atomic vectors
-or lists.
+\item{...}{<\code{\link[=tidyr_data_masking]{data-masking}}> Specification of columns
+to expand or complete. Columns can be atomic vectors or lists.
 \itemize{
 \item To find all unique combinations of \code{x}, \code{y} and \code{z}, including those not
 present in the data, supply each variable as a separate argument:
-\code{expand(df, x, y, z)}.
+\code{expand(df, x, y, z)} or \code{complete(df, x, y, z)}.
 \item To find only the combinations that occur in the
 data, use \code{nesting}: \code{expand(df, nesting(x, y, z))}.
 \item You can combine the two forms. For example,
@@ -29,9 +29,9 @@ a row for each present school-student combination for all possible
 dates.
 }
 
-When used with factors, \code{expand()} uses the full set of levels, not just
-those that appear in the data. If you want to use only the values seen in
-the data, use \code{forcats::fct_drop()}.
+When used with factors, \code{\link[=expand]{expand()}} and \code{\link[=complete]{complete()}} use the full set of
+levels, not just those that appear in the data. If you want to use only the
+values seen in the data, use \code{forcats::fct_drop()}.
 
 When used with continuous variables, you may need to fill in values
 that do not appear in the data: to do so use expressions like
@@ -68,34 +68,37 @@ explicit missing values (e.g., fill in gaps in your data frame).
 (e.g., identify gaps in your data frame).
 }
 }
-\details{
-With grouped data frames, \code{expand()} operates \emph{within} each group. Because of
-this, you cannot expand on a grouping column.
+\section{Grouped data frames}{
+
+With grouped data frames created by \code{\link[dplyr:group_by]{dplyr::group_by()}}, \code{expand()} operates
+\emph{within} each group. Because of this, you cannot expand on a grouping column.
 }
+
 \examples{
+# Finding combinations ------------------------------------------------------
 fruits <- tibble(
-  type   = c("apple", "orange", "apple", "orange", "orange", "orange"),
-  year   = c(2010, 2010, 2012, 2010, 2011, 2012),
-  size  =  factor(
-    c("XS", "S",  "M", "S", "S", "M"),
+  type = c("apple", "orange", "apple", "orange", "orange", "orange"),
+  year = c(2010, 2010, 2012, 2010, 2011, 2012),
+  size = factor(
+    c("XS", "S", "M", "S", "S", "M"),
     levels = c("XS", "S", "M", "L")
   ),
   weights = rnorm(6, as.numeric(size) + 2)
 )
 
-# All possible combinations ---------------------------------------
-# Note that all defined, but not necessarily present, levels of the
-# factor variable `size` are retained.
+# All combinations, including factor levels that are not used
 fruits \%>\% expand(type)
+fruits \%>\% expand(size)
 fruits \%>\% expand(type, size)
 fruits \%>\% expand(type, size, year)
 
-# Only combinations that already appear in the data ---------------
+# Only combinations that already appear in the data
 fruits \%>\% expand(nesting(type))
+fruits \%>\% expand(nesting(size))
 fruits \%>\% expand(nesting(type, size))
 fruits \%>\% expand(nesting(type, size, year))
 
-# Other uses -------------------------------------------------------
+# Other uses ----------------------------------------------------------------
 # Use with `full_seq()` to fill in values of continuous variables
 fruits \%>\% expand(type, size, full_seq(year, 1))
 fruits \%>\% expand(type, size, 2010:2013)
@@ -105,11 +108,13 @@ all <- fruits \%>\% expand(type, size, year)
 all
 all \%>\% dplyr::anti_join(fruits)
 
-# Use with `right_join()` to fill in missing rows
+# Use with `right_join()` to fill in missing rows (like `complete()`)
 fruits \%>\% dplyr::right_join(all)
 
 # Use with `group_by()` to expand within each group
-fruits \%>\% dplyr::group_by(type) \%>\% expand(year, size)
+fruits \%>\%
+  dplyr::group_by(type) \%>\%
+  expand(year, size)
 }
 \seealso{
 \code{\link[=complete]{complete()}} to expand list objects. \code{\link[=expand_grid]{expand_grid()}}

@@ -14,18 +14,18 @@
 #'  * use it with `anti_join()` to figure out which combinations are missing
 #'    (e.g., identify gaps in your data frame).
 #'
-#' @details
-#' With grouped data frames, `expand()` operates _within_ each group. Because of
-#' this, you cannot expand on a grouping column.
+#' @section Grouped data frames:
+#' With grouped data frames created by [dplyr::group_by()], `expand()` operates
+#' _within_ each group. Because of this, you cannot expand on a grouping column.
 #'
 #' @inheritParams expand_grid
 #' @param data A data frame.
-#' @param ... Specification of columns to expand. Columns can be atomic vectors
-#'   or lists.
+#' @param ... <[`data-masking`][tidyr_data_masking]> Specification of columns
+#'   to expand or complete. Columns can be atomic vectors or lists.
 #'
 #'   * To find all unique combinations of `x`, `y` and `z`, including those not
 #'     present in the data, supply each variable as a separate argument:
-#'     `expand(df, x, y, z)`.
+#'     `expand(df, x, y, z)` or `complete(df, x, y, z)`.
 #'   * To find only the combinations that occur in the
 #'     data, use `nesting`: `expand(df, nesting(x, y, z))`.
 #'   * You can combine the two forms. For example,
@@ -33,41 +33,41 @@
 #'     a row for each present school-student combination for all possible
 #'     dates.
 #'
-#'   When used with factors, `expand()` uses the full set of levels, not just
-#'   those that appear in the data. If you want to use only the values seen in
-#'   the data, use `forcats::fct_drop()`.
+#'   When used with factors, [expand()] and [complete()] use the full set of
+#'   levels, not just those that appear in the data. If you want to use only the
+#'   values seen in the data, use `forcats::fct_drop()`.
 #'
 #'   When used with continuous variables, you may need to fill in values
 #'   that do not appear in the data: to do so use expressions like
-
 #'   `year = 2010:2020` or `year = full_seq(year,1)`.
 #' @seealso [complete()] to expand list objects. [expand_grid()]
 #'   to input vectors rather than a data frame.
 #' @export
 #' @examples
+#' # Finding combinations ------------------------------------------------------
 #' fruits <- tibble(
-#'   type   = c("apple", "orange", "apple", "orange", "orange", "orange"),
-#'   year   = c(2010, 2010, 2012, 2010, 2011, 2012),
-#'   size  =  factor(
-#'     c("XS", "S",  "M", "S", "S", "M"),
+#'   type = c("apple", "orange", "apple", "orange", "orange", "orange"),
+#'   year = c(2010, 2010, 2012, 2010, 2011, 2012),
+#'   size = factor(
+#'     c("XS", "S", "M", "S", "S", "M"),
 #'     levels = c("XS", "S", "M", "L")
 #'   ),
 #'   weights = rnorm(6, as.numeric(size) + 2)
 #' )
 #'
-#' # All possible combinations ---------------------------------------
-#' # Note that all defined, but not necessarily present, levels of the
-#' # factor variable `size` are retained.
+#' # All combinations, including factor levels that are not used
 #' fruits %>% expand(type)
+#' fruits %>% expand(size)
 #' fruits %>% expand(type, size)
 #' fruits %>% expand(type, size, year)
 #'
-#' # Only combinations that already appear in the data ---------------
+#' # Only combinations that already appear in the data
 #' fruits %>% expand(nesting(type))
+#' fruits %>% expand(nesting(size))
 #' fruits %>% expand(nesting(type, size))
 #' fruits %>% expand(nesting(type, size, year))
 #'
-#' # Other uses -------------------------------------------------------
+#' # Other uses ----------------------------------------------------------------
 #' # Use with `full_seq()` to fill in values of continuous variables
 #' fruits %>% expand(type, size, full_seq(year, 1))
 #' fruits %>% expand(type, size, 2010:2013)
@@ -77,11 +77,13 @@
 #' all
 #' all %>% dplyr::anti_join(fruits)
 #'
-#' # Use with `right_join()` to fill in missing rows
+#' # Use with `right_join()` to fill in missing rows (like `complete()`)
 #' fruits %>% dplyr::right_join(all)
 #'
 #' # Use with `group_by()` to expand within each group
-#' fruits %>% dplyr::group_by(type) %>% expand(year, size)
+#' fruits %>%
+#'   dplyr::group_by(type) %>%
+#'   expand(year, size)
 expand <- function(data, ..., .name_repair = "check_unique") {
   UseMethod("expand")
 }
@@ -99,15 +101,35 @@ expand.data.frame <- function(data, ..., .name_repair = "check_unique") {
 
 #' @export
 expand.grouped_df <- function(data, ..., .name_repair = "check_unique") {
-  dplyr::summarise(
-    data,
-    expand(
-      data = dplyr::cur_data(),
-      ...,
-      .name_repair = .name_repair
-    ),
-    .groups = "keep"
-  )
+
+  if (the$has_dplyr_1_1) {
+    reframe <- utils::getFromNamespace("reframe", ns = "dplyr")
+    pick <- utils::getFromNamespace("pick", ns = "dplyr")
+
+    out <- reframe(
+      data,
+      expand(
+        data = pick(everything()),
+        ...,
+        .name_repair = .name_repair
+      )
+    )
+
+    drop <- dplyr::group_by_drop_default(data)
+    dplyr::group_by(out, !!!dplyr::groups(data), .drop = drop)
+  } else {
+    dplyr::summarise(
+      data,
+      expand(
+        data = dplyr::cur_data(),
+        ...,
+        .name_repair = .name_repair
+      ),
+      .groups = "keep"
+    )
+
+  }
+
 }
 
 # Nesting & crossing ------------------------------------------------------
@@ -173,26 +195,40 @@ nesting <- function(..., .name_repair = "check_unique") {
 #' expand_grid(l1 = letters, l2 = LETTERS)
 #'
 #' # Can also expand data frames
-#' expand_grid(df = data.frame(x = 1:2, y = c(2, 1)), z = 1:3)
+#' expand_grid(df = tibble(x = 1:2, y = c(2, 1)), z = 1:3)
 #' # And matrices
 #' expand_grid(x1 = matrix(1:4, nrow = 2), x2 = matrix(5:8, nrow = 2))
 expand_grid <- function(..., .name_repair = "check_unique") {
   out <- grid_dots(...)
 
-  sizes <- list_sizes(out)
-  size <- prod(sizes)
+  names <- names2(out)
+  unnamed <- which(names == "")
+  any_unnamed <- any(unnamed)
 
-  if (size == 0) {
-    out <- map(out, vec_slice, integer())
-  } else {
-    times <- size / cumprod(sizes)
-    out <- map2(out, times, vec_rep_each)
-    times <- size / times / sizes
-    out <- map2(out, times, vec_rep)
+  if (any_unnamed) {
+    # `vec_expand_grid()` requires all inputs to be named.
+    # Most are auto named by `grid_dots()`, but unnamed data frames are not.
+    # So we temporarily name unnamed data frames that eventually get spliced.
+    names[unnamed] <- vec_paste0("...", unnamed)
+    names(out) <- names
   }
 
+  out <- vec_expand_grid(
+    !!!out,
+    .name_repair = "minimal",
+    .error_call = current_env()
+  )
+
+  if (any_unnamed) {
+    names[unnamed] <- ""
+    names(out) <- names
+  }
+
+  size <- vec_size(out)
+
   # Flattens unnamed data frames after grid expansion
-  out <- df_list(!!!out, .name_repair = .name_repair)
+  out <- tidyr_new_list(out)
+  out <- df_list(!!!out, .name_repair = .name_repair, .error_call = current_env())
   out <- tibble::new_tibble(out, nrow = size)
 
   out
@@ -201,12 +237,6 @@ expand_grid <- function(..., .name_repair = "check_unique") {
 # Helpers -----------------------------------------------------------------
 
 sorted_unique <- function(x) {
-  if (is.data.frame(x) && ncol(x) == 0L) {
-    # vec_sort() bug with 0 column data frames:
-    # https://github.com/r-lib/vctrs/issues/1499
-    return(x)
-  }
-
   if (is.factor(x)) {
     fct_unique(x)
   } else if (is_bare_list(x)) {
@@ -218,10 +248,6 @@ sorted_unique <- function(x) {
 
 # forcats::fct_unique
 fct_unique <- function(x) {
-  if (!is.factor(x)) {
-    abort("`x` must be a factor.")
-  }
-
   levels <- levels(x)
   out <- levels
 
@@ -232,7 +258,7 @@ fct_unique <- function(x) {
   factor(out, levels = levels, exclude = NULL, ordered = is.ordered(x))
 }
 
-grid_dots <- function(..., `_data` = NULL) {
+grid_dots <- function(..., `_data` = NULL, .error_call = caller_env()) {
   dots <- enquos(...)
   n_dots <- length(dots)
 
@@ -242,10 +268,11 @@ grid_dots <- function(..., `_data` = NULL) {
   # Silently uniquely repair "auto-names" to avoid collisions
   # from truncated long names. Probably not a perfect system, but solves
   # most of the reported issues.
-  # TODO: Directly use rlang 1.0.0's:
-  # `rlang::quos_auto_name(repair_auto = "unique", repair_quiet = TRUE)`
-  auto_names <- names(quos_auto_name(dots[needs_auto_name]))
-  auto_names <- vec_as_names(auto_names, repair = "unique", quiet = TRUE)
+  auto_names <- names(exprs_auto_name(
+    exprs = dots[needs_auto_name],
+    repair_auto = "unique",
+    repair_quiet = TRUE
+  ))
 
   names[needs_auto_name] <- auto_names
 
@@ -280,7 +307,7 @@ grid_dots <- function(..., `_data` = NULL) {
     }
 
     arg <- paste0("..", i)
-    vec_assert(dot, arg = arg)
+    vec_assert(dot, arg = arg, call = .error_call)
 
     out[[i]] <- dot
 

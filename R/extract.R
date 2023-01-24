@@ -1,17 +1,20 @@
 #' Extract a character column into multiple columns using regular
 #' expression groups
 #'
+#' @description
+#' `r lifecycle::badge("superseded")`
+#'
+#' `extract()` has been superseded in favour of [separate_wider_regex()]
+#' because it has a more polished API and better handling of problems.
+#' Superseded functions will not go away, but will only receive critical bug
+#' fixes.
+#'
 #' Given a regular expression with capturing groups, `extract()` turns
 #' each group into a new column. If the groups don't match, or the input
 #' is NA, the output will be NA.
 #'
 #' @inheritParams expand
-#' @param col Column name or position. This is passed to
-#'   [tidyselect::vars_pull()].
-#'
-#'   This argument is passed by expression and supports
-#'   [quasiquotation][rlang::quasiquotation] (you can unquote column
-#'   names or column positions).
+#' @param col <[`tidy-select`][tidyr_tidy_select]> Column to expand.
 #' @param into Names of new variables to create as character vector.
 #'    Use `NA` to omit the variable in the output.
 #' @param regex A string representing a regular expression used to extract the
@@ -27,42 +30,48 @@
 #' @seealso [separate()] to split up by a separator.
 #' @export
 #' @examples
-#' df <- data.frame(x = c(NA, "a-b", "a-d", "b-c", "d-e"))
+#' df <- tibble(x = c(NA, "a-b", "a-d", "b-c", "d-e"))
 #' df %>% extract(x, "A")
 #' df %>% extract(x, c("A", "B"), "([[:alnum:]]+)-([[:alnum:]]+)")
+#'
+#' # Now recommended
+#' df %>%
+#'   separate_wider_regex(
+#'     x,
+#'     patterns = c(A = "[[:alnum:]]+", "-", B = "[[:alnum:]]+")
+#'   )
 #'
 #' # If no match, NA:
 #' df %>% extract(x, c("A", "B"), "([a-d]+)-([a-d]+)")
 extract <- function(data, col, into, regex = "([[:alnum:]]+)",
                     remove = TRUE, convert = FALSE, ...) {
-  ellipsis::check_dots_used()
+  check_dots_used()
   UseMethod("extract")
 }
 #' @export
 extract.data.frame <- function(data, col, into, regex = "([[:alnum:]]+)",
                                remove = TRUE, convert = FALSE, ...) {
-  check_present(col)
-  var <- tidyselect::vars_pull(names(data), !! enquo(col))
+  check_required(col)
+
+  var <- tidyselect::vars_pull(names(data), !!enquo(col))
   value <- as.character(data[[var]])
 
   new_cols <- str_extract(value, into = into, regex = regex, convert = convert)
-  out <- append_df(data, new_cols, var, remove = remove)
+  out <- df_append(data, new_cols, var, remove = remove)
   reconstruct_tibble(data, out, if (remove) var else chr())
 }
 
-str_extract <- function(x, into, regex, convert = FALSE) {
-  check_not_stringr_pattern(regex, "regex")
-
-  stopifnot(
-    is_string(regex),
-    is_character(into)
-  )
+str_extract <- function(x, into, regex, convert = FALSE, error_call = caller_env()) {
+  check_string(regex, call = error_call)
+  check_not_stringr_pattern(regex, call = error_call)
+  check_character(into, call = error_call)
+  check_bool(convert, call = error_call)
 
   out <- str_match_first(x, regex)
   if (length(out) != length(into)) {
-    stop(
-      "`regex` should define ", length(into), " groups; ", length(out), " found.",
-      call. = FALSE
+    cli::cli_abort(
+      "{.arg regex} should define {length(into)} groups; {length(out)} found.",
+      call = error_call
     )
   }
 
@@ -94,7 +103,7 @@ str_match_first <- function(string, regex) {
   loc <- regexpr(regex, string, perl = TRUE)
   loc <- group_loc(loc)
 
-  out <- lapply(
+  out <- map(
     seq_len(loc$matches),
     function(i) substr(string, loc$start[, i], loc$end[, i])
   )

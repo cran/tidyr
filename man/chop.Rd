@@ -5,25 +5,38 @@
 \alias{unchop}
 \title{Chop and unchop}
 \usage{
-chop(data, cols)
+chop(data, cols, ..., error_call = current_env())
 
-unchop(data, cols, keep_empty = FALSE, ptype = NULL)
+unchop(
+  data,
+  cols,
+  ...,
+  keep_empty = FALSE,
+  ptype = NULL,
+  error_call = current_env()
+)
 }
 \arguments{
 \item{data}{A data frame.}
 
-\item{cols}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> Columns to chop or unchop
-(automatically quoted).
+\item{cols}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> Columns to chop or unchop.
 
 For \code{unchop()}, each column should be a list-column containing generalised
 vectors (e.g. any mix of \code{NULL}s, atomic vector, S3 vectors, a lists,
 or data frames).}
 
+\item{...}{These dots are for future extensions and must be empty.}
+
+\item{error_call}{The execution environment of a currently
+running function, e.g. \code{caller_env()}. The function will be
+mentioned in error messages as the source of the error. See the
+\code{call} argument of \code{\link[rlang:abort]{abort()}} for more information.}
+
 \item{keep_empty}{By default, you get one row of output for each element
-of the list your unchopping/unnesting. This means that if there's a
-size-0 element (like \code{NULL} or an empty data frame), that entire row
-will be dropped from the output. If you want to preserve all rows,
-use \code{keep_empty = TRUE} to replace size-0 elements with a single row
+of the list that you are unchopping/unnesting. This means that if there's a
+size-0 element (like \code{NULL} or an empty data frame or vector), then that
+entire row will be dropped from the output. If you want to preserve all
+rows, use \code{keep_empty = TRUE} to replace size-0 elements with a single row
 of missing values.}
 
 \item{ptype}{Optionally, a named list of column name-prototype pairs to
@@ -54,7 +67,7 @@ the type of its elements, \code{unchop()} is able to reconstitute the
 correct vector type even for empty list-columns.
 }
 \examples{
-# Chop ==============================================================
+# Chop ----------------------------------------------------------------------
 df <- tibble(x = c(1, 1, 1, 2, 2, 3), y = 1:6, z = 6:1)
 # Note that we get one row of output for each unique combination of
 # non-chopped variables
@@ -62,17 +75,15 @@ df \%>\% chop(c(y, z))
 # cf nest
 df \%>\% nest(data = c(y, z))
 
-# Unchop ============================================================
+# Unchop --------------------------------------------------------------------
 df <- tibble(x = 1:4, y = list(integer(), 1L, 1:2, 1:3))
 df \%>\% unchop(y)
 df \%>\% unchop(y, keep_empty = TRUE)
 
-# Incompatible types -------------------------------------------------
-# If the list-col contains types that can not be natively
+# unchop will error if the types are not compatible:
 df <- tibble(x = 1:2, y = list("1", 1:3))
 try(df \%>\% unchop(y))
 
-# Unchopping data frames -----------------------------------------------------
 # Unchopping a list-col of data frames must generate a df-col because
 # unchop leaves the column names unchanged
 df <- tibble(x = 1:3, y = list(NULL, tibble(x = 1), tibble(y = 1:2)))

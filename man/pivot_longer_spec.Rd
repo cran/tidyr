@@ -8,22 +8,27 @@
 pivot_longer_spec(
   data,
   spec,
+  ...,
+  cols_vary = "fastest",
   names_repair = "check_unique",
   values_drop_na = FALSE,
   values_ptypes = NULL,
-  values_transform = NULL
+  values_transform = NULL,
+  error_call = current_env()
 )
 
 build_longer_spec(
   data,
   cols,
+  ...,
   names_to = "name",
   values_to = "value",
   names_prefix = NULL,
   names_sep = NULL,
   names_pattern = NULL,
   names_ptypes = NULL,
-  names_transform = NULL
+  names_transform = NULL,
+  error_call = current_env()
 )
 }
 \arguments{
@@ -38,7 +43,21 @@ Additional columns in \code{spec} should be named to match columns in the
 long format of the dataset and contain values corresponding to columns
 pivoted from the wide format.
 The special \code{.seq} variable is used to disambiguate rows internally;
-it is automatically removed after pivotting.}
+it is automatically removed after pivoting.}
+
+\item{...}{These dots are for future extensions and must be empty.}
+
+\item{cols_vary}{When pivoting \code{cols} into longer format, how should the
+output rows be arranged relative to their original row number?
+\itemize{
+\item \code{"fastest"}, the default, keeps individual rows from \code{cols} close
+together in the output. This often produces intuitively ordered output
+when you have at least one key column from \code{data} that is not involved in
+the pivoting process.
+\item \code{"slowest"} keeps individual columns from \code{cols} close together in the
+output. This often produces intuitively ordered output when you utilize
+all of the columns from \code{data} in the pivoting process.
+}}
 
 \item{names_repair}{What happens if the output has invalid column names?
 The default, \code{"check_unique"} is to error if the columns are duplicated.
@@ -50,6 +69,11 @@ for more options.}
 in the \code{value_to} column. This effectively converts explicit missing values
 to implicit missing values, and should generally be used only when missing
 values in \code{data} were created by its structure.}
+
+\item{error_call}{The execution environment of a currently
+running function, e.g. \code{caller_env()}. The function will be
+mentioned in error messages as the source of the error. See the
+\code{call} argument of \code{\link[rlang:abort]{abort()}} for more information.}
 
 \item{cols}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> Columns to pivot into
 longer format.}
@@ -103,11 +127,7 @@ zero-length vector (like \code{integer()} or \code{numeric()}) that defines the 
 class, and attributes of a vector. Use these arguments if you want to
 confirm that the created columns are the types that you expect. Note that
 if you want to change (instead of confirm) the types of specific columns,
-you should use \code{names_transform} or \code{values_transform} instead.
-
-For backwards compatibility reasons, supplying \code{list()} is interpreted as
-being identical to \code{NULL} rather than as using a list prototype on all
-columns. Expect this to change in the future.}
+you should use \code{names_transform} or \code{values_transform} instead.}
 
 \item{names_transform, values_transform}{Optionally, a list of column
 name-function pairs. Alternatively, a single function can be supplied,
@@ -120,8 +140,8 @@ be character, and the type of the variables generated from \code{values_to}
 will be the common type of the input columns used to generate them.}
 }
 \description{
-This is a low level interface to pivotting, inspired by the cdata package,
-that allows you to describe pivotting with a data frame.
+This is a low level interface to pivoting, inspired by the cdata package,
+that allows you to describe pivoting with a data frame.
 }
 \examples{
 # See vignette("pivot") for examples and explanation
@@ -141,7 +161,7 @@ pivot_longer_spec(relig_income, spec)
 relig_income \%>\% pivot_longer(
   cols = !religion,
   names_to = "income",
-  values_to = "count")
-
+  values_to = "count"
+)
 }
 \keyword{internal}

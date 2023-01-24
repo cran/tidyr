@@ -1,4 +1,4 @@
-#' Nest and unnest
+#' Nest rows into a list-column of data frames
 #'
 #' @description
 #' Nesting creates a list-column of data frames; unnesting flattens it back out
@@ -9,10 +9,14 @@
 #'
 #' Learn more in `vignette("nest")`.
 #'
+#' @details
+#' If neither `...` nor `.by` are supplied, `nest()` will nest all variables,
+#' and will use the column name supplied through `.key`.
+#'
 #' @section New syntax:
 #' tidyr 1.0.0 introduced a new syntax for `nest()` and `unnest()` that's
 #' designed to be more similar to other functions. Converting to the new syntax
-#' should be straightforward (guided by the message you'll recieve) but if
+#' should be straightforward (guided by the message you'll receive) but if
 #' you just need to run an old analysis, you can easily revert to the previous
 #' behaviour using [nest_legacy()] and [unnest_legacy()] as follows:
 #'
@@ -24,109 +28,108 @@
 #'
 #' @section Grouped data frames:
 #' `df %>% nest(data = c(x, y))` specifies the columns to be nested; i.e. the
-#' columns that will appear in the inner data frame. Alternatively, you can
-#' `nest()` a grouped data frame created by [dplyr::group_by()]. The grouping
-#' variables remain in the outer data frame and the others are nested. The
-#' result preserves the grouping of the input.
+#' columns that will appear in the inner data frame. `df %>% nest(.by = c(x,
+#' y))` specifies the columns to nest _by_; i.e. the columns that will remain in
+#' the outer data frame. An alternative way to achieve the latter is to `nest()`
+#' a grouped data frame created by [dplyr::group_by()]. The grouping variables
+#' remain in the outer data frame and the others are nested. The result
+#' preserves the grouping of the input.
 #'
 #' Variables supplied to `nest()` will override grouping variables so that
 #' `df %>% group_by(x, y) %>% nest(data = !z)` will be equivalent to
 #' `df %>% nest(data = !z)`.
 #'
+#' You can't supply `.by` with a grouped data frame, as the groups already
+#' represent what you are nesting by.
+#'
 #' @param .data A data frame.
-#' @param ... <[`tidy-select`][tidyr_tidy_select]> Columns to nest, specified
-#'   using name-variable pairs of the form `new_col = c(col1, col2, col3)`.
-#'   The right hand side can be any valid tidy select expression.
+#' @param ... <[`tidy-select`][tidyr_tidy_select]> Columns to nest; these will
+#'   appear in the inner data frames.
+#'
+#'   Specified using name-variable pairs of the form
+#'   `new_col = c(col1, col2, col3)`. The right hand side can be any valid
+#'   tidyselect expression.
+#'
+#'   If not supplied, then `...` is derived as all columns _not_ selected by
+#'   `.by`, and will use the column name from `.key`.
 #'
 #'   `r lifecycle::badge("deprecated")`:
-#'   previously you could write `df %>% nest(x, y, z)` and `df %>%
-#'   unnest(x, y, z)`. Convert to `df %>% nest(data = c(x, y, z))`.
-#'   and `df %>% unnest(c(x, y, z))`.
+#'   previously you could write `df %>% nest(x, y, z)`.
+#'   Convert to `df %>% nest(data = c(x, y, z))`.
+#' @param .by <[`tidy-select`][tidyr_tidy_select]> Columns to nest _by_; these
+#'   will remain in the outer data frame.
 #'
-#'   If you previously created new variable in `unnest()` you'll now need to
-#'   do it explicitly with `mutate()`. Convert `df %>% unnest(y = fun(x, y, z))`
-#'   to `df %>% mutate(y = fun(x, y, z)) %>% unnest(y)`.
-#' @param names_sep,.names_sep If `NULL`, the default, the names will be left
-#'   as is. In `nest()`, inner names will come from the former outer names;
-#'   in `unnest()`, the new outer names will come from the inner names.
+#'   `.by` can be used in place of or in conjunction with columns supplied
+#'   through `...`.
 #'
-#'   If a string, the inner and outer names will be used together. In
-#'   `unnest()`, the names of the new outer columns will be formed by pasting
-#'   together the outer and the inner column names, separated by `names_sep`. In
-#'   `nest()`, the new inner names will have the outer names + `names_sep`
-#'   automatically stripped. This makes `names_sep` roughly symmetric between
-#'   nesting and unnesting.
-#' @param .key
-#'   `r lifecycle::badge("deprecated")`:
-#'   No longer needed because of the new `new_col = c(col1, col2,
-#'   col3)` syntax.
+#'   If not supplied, then `.by` is derived as all columns _not_ selected by
+#'   `...`.
+#' @param .key The name of the resulting nested column. Only applicable when
+#'   `...` isn't specified, i.e. in the case of `df %>% nest(.by = x)`.
+#'
+#'   If `NULL`, then `"data"` will be used by default.
+#' @param .names_sep If `NULL`, the default, the inner names will come from
+#'   the former outer names. If a string, the  new inner names will use the
+#'   outer names with `names_sep` automatically stripped. This makes
+#'   `names_sep` roughly symmetric between nesting and unnesting.
 #' @export
 #' @examples
 #' df <- tibble(x = c(1, 1, 1, 2, 2, 3), y = 1:6, z = 6:1)
-#' # Note that we get one row of output for each unique combination of
-#' # non-nested variables
-#' df %>% nest(data = c(y, z))
-#' # chop does something similar, but retains individual columns
-#' df %>% chop(c(y, z))
 #'
-#' # use tidyselect syntax and helpers, just like in dplyr::select()
+#' # Specify variables to nest using name-variable pairs.
+#' # Note that we get one row of output for each unique combination of
+#' # non-nested variables.
+#' df %>% nest(data = c(y, z))
+#'
+#' # Specify variables to nest by (rather than variables to nest) using `.by`
+#' df %>% nest(.by = x)
+#'
+#' # In this case, since `...` isn't used you can specify the resulting column
+#' # name with `.key`
+#' df %>% nest(.by = x, .key = "cols")
+#'
+#' # Use tidyselect syntax and helpers, just like in `dplyr::select()`
 #' df %>% nest(data = any_of(c("y", "z")))
 #'
-#' iris %>% nest(data = !Species)
-#' nest_vars <- names(iris)[1:4]
-#' iris %>% nest(data = any_of(nest_vars))
+#' # `...` and `.by` can be used together to drop columns you no longer need,
+#' # or to include the columns you are nesting by in the inner data frame too.
+#' # This drops `z`:
+#' df %>% nest(data = y, .by = x)
+#' # This includes `x` in the inner data frame:
+#' df %>% nest(data = everything(), .by = x)
+#'
+#' # Multiple nesting structures can be specified at once
 #' iris %>%
 #'   nest(petal = starts_with("Petal"), sepal = starts_with("Sepal"))
 #' iris %>%
 #'   nest(width = contains("Width"), length = contains("Length"))
 #'
 #' # Nesting a grouped data frame nests all variables apart from the group vars
-#' library(dplyr)
 #' fish_encounters %>%
-#'   group_by(fish) %>%
+#'   dplyr::group_by(fish) %>%
 #'   nest()
+#'
+#' # That is similar to `nest(.by = )`, except here the result isn't grouped
+#' fish_encounters %>%
+#'   nest(.by = fish)
 #'
 #' # Nesting is often useful for creating per group models
 #' mtcars %>%
-#'   group_by(cyl) %>%
-#'   nest() %>%
-#'   mutate(models = lapply(data, function(df) lm(mpg ~ wt, data = df)))
-#'
-#' # unnest() is primarily designed to work with lists of data frames
-#' df <- tibble(
-#'   x = 1:3,
-#'   y = list(
-#'     NULL,
-#'     tibble(a = 1, b = 2),
-#'     tibble(a = 1:3, b = 3:1)
-#'   )
-#' )
-#' df %>% unnest(y)
-#' df %>% unnest(y, keep_empty = TRUE)
-#'
-#' # If you have lists of lists, or lists of atomic vectors, instead
-#' # see hoist(), unnest_wider(), and unnest_longer()
-#'
-#' #' # You can unnest multiple columns simultaneously
-#' df <- tibble(
-#'  a = list(c("a", "b"), "c"),
-#'  b = list(1:2, 3),
-#'  c = c(11, 22)
-#' )
-#' df %>% unnest(c(a, b))
-#'
-#' # Compare with unnesting one column at a time, which generates
-#' # the Cartesian product
-#' df %>% unnest(a) %>% unnest(b)
-nest <- function(.data, ..., .names_sep = NULL, .key = deprecated()) {
+#'   nest(.by = cyl) %>%
+#'   dplyr::mutate(models = lapply(data, function(df) lm(mpg ~ wt, data = df)))
+nest <- function(.data,
+                 ...,
+                 .by = NULL,
+                 .key = NULL,
+                 .names_sep = NULL) {
   cols <- enquos(...)
-
   empty <- names2(cols) == ""
+
   if (any(empty)) {
     cols_good <- cols[!empty]
     cols_bad <- cols[empty]
 
-    .key <- if (missing(.key)) "data" else as.character(ensym(.key))
+    .key <- check_key(.key)
 
     if (length(cols_bad) == 1L) {
       cols_bad <- cols_bad[[1]]
@@ -140,43 +143,63 @@ nest <- function(.data, ..., .names_sep = NULL, .key = deprecated()) {
 
     cols <- c(cols_good, cols_fixed)
 
-    warn(paste0(
-      "All elements of `...` must be named.\n",
-      "Did you want `", .key, " = ", cols_fixed_label, "`?"
-    ))
+    lifecycle::deprecate_warn(
+      when = "1.0.0",
+      what = I("Supplying `...` without names"),
+      details = c(
+        i = "Please specify a name for each selection.",
+        i = cli::format_inline("Did you want `{(.key)} = {cols_fixed_label}`?")
+      ),
+      always = TRUE
+    )
 
-    return(nest(.data, !!!cols))
+    return(nest(.data, !!!cols, .by = {{ .by }}))
   }
 
   UseMethod("nest")
 }
 
 #' @export
-nest.data.frame <- function(.data, ..., .names_sep = NULL, .key = deprecated()) {
+nest.data.frame <- function(.data,
+                            ...,
+                            .by = NULL,
+                            .key = NULL,
+                            .names_sep = NULL) {
   # The data frame print handles nested data frames poorly, so we want to
   # convert data frames (but not subclasses) to tibbles
   if (identical(class(.data), "data.frame")) {
     .data <- as_tibble(.data)
   }
 
-  nest.tbl_df(.data, ..., .names_sep = .names_sep, .key = .key)
+  nest.tbl_df(
+    .data,
+    ...,
+    .by = {{ .by }},
+    .key = .key,
+    .names_sep = .names_sep
+  )
 }
 
 #' @export
-nest.tbl_df <- function(.data, ..., .names_sep = NULL, .key = deprecated()) {
-  .key <- check_key(.key)
-  if (missing(...)) {
-    warn(paste0(
-      "`...` must not be empty for ungrouped data frames.\n",
-      "Did you want `", .key, " = everything()`?"
-    ))
-    cols <- quos(!!.key := everything())
-  } else {
-    cols <- enquos(...)
-  }
+nest.tbl_df <- function(.data,
+                        ...,
+                        .by = NULL,
+                        .key = NULL,
+                        .names_sep = NULL) {
+  error_call <- current_env()
 
-  out <- pack(.data, !!!cols, .names_sep = .names_sep)
-  out <- chop(out, cols = all_of(names(cols)))
+  info <- nest_info(.data, ..., .by = {{ .by }}, .key = .key)
+  cols <- info$cols
+  inner <- info$inner
+  outer <- info$outer
+
+  inner <- .data[inner]
+  inner <- pack(inner, !!!cols, .names_sep = .names_sep, .error_call = error_call)
+
+  out <- .data[outer]
+  out <- vec_cbind(out, inner, .name_repair = "check_unique", .error_call = error_call)
+  out <- reconstruct_tibble(.data, out)
+  out <- chop(out, cols = all_of(names(cols)), error_call = error_call)
 
   # `nest()` currently doesn't return list-of columns
   for (name in names(cols)) {
@@ -187,173 +210,115 @@ nest.tbl_df <- function(.data, ..., .names_sep = NULL, .key = deprecated()) {
 }
 
 #' @export
-nest.grouped_df <- function(.data, ..., .names_sep = NULL, .key = deprecated()) {
+nest.grouped_df <- function(.data,
+                            ...,
+                            .by = NULL,
+                            .key = NULL,
+                            .names_sep = NULL) {
+  by <- enquo(.by)
+  if (!quo_is_null(by)) {
+    cli::cli_abort("Can't supply {.arg .by} when {.arg .data} is a grouped data frame.")
+  }
+
   if (missing(...)) {
     .key <- check_key(.key)
     cols <- setdiff(names(.data), dplyr::group_vars(.data))
     nest.tbl_df(.data, !!.key := all_of(cols), .names_sep = .names_sep)
   } else {
-    NextMethod()
+    nest.tbl_df(.data, ..., .key = .key, .names_sep = .names_sep)
   }
 }
 
-check_key <- function(.key) {
-  if (!is_missing(.key)) {
-    warn("`.key` is deprecated")
-    .key
-  } else {
-    "data"
-  }
-}
+nest_info <- function(.data,
+                      ...,
+                      .by = NULL,
+                      .key = NULL,
+                      .error_call = caller_env()) {
+  by <- enquo(.by)
 
-# unnest ------------------------------------------------------------------
+  cols <- enquos(...)
+  n_cols <- length(cols)
 
-#' @inheritParams unchop
-#' @inheritParams unpack
-#' @param cols <[`tidy-select`][tidyr_tidy_select]> Columns to unnest.
-#'
-#'   If you `unnest()` multiple columns, parallel entries must be of
-#'   compatible sizes, i.e. they're either equal or length 1 (following the
-#'   standard tidyverse recycling rules).
-#' @param .drop,.preserve
-#'   `r lifecycle::badge("deprecated")`:
-#'   all list-columns are now preserved; If there are any that you
-#'   don't want in the output use `select()` to remove them prior to
-#'   unnesting.
-#' @param .id
-#'   `r lifecycle::badge("deprecated")`:
-#'   convert `df %>% unnest(x, .id = "id")` to `df %>% mutate(id =
-#'   names(x)) %>% unnest(x))`.
-#' @param .sep
-#'   `r lifecycle::badge("deprecated")`:
-#'   use `names_sep` instead.
-#' @export
-#' @rdname nest
-unnest <- function(data,
-                   cols,
-                   ...,
-                   keep_empty = FALSE,
-                   ptype = NULL,
-                   names_sep = NULL,
-                   names_repair = "check_unique",
-                   .drop = deprecated(),
-                   .id = deprecated(),
-                   .sep = deprecated(),
-                   .preserve = deprecated()) {
+  key <- check_key(.key, error_call = .error_call)
 
-  deprecated <- FALSE
-  if (!missing(.preserve)) {
-    lifecycle::deprecate_warn("1.0.0", "unnest(.preserve = )",
-      details = "All list-columns are now preserved"
-    )
-    deprecated <- TRUE
-    .preserve <- tidyselect::vars_select(tbl_vars(data), !!enquo(.preserve))
-  } else {
-    .preserve <- NULL
+  if (n_cols != 0L && !is_default_key(.key)) {
+    warn_unused_key(error_call = .error_call)
   }
 
-  if (missing(cols) && missing(...)) {
-    list_cols <- names(data)[map_lgl(data, is_list)]
-    cols <- expr(c(!!!syms(setdiff(list_cols, .preserve))))
-    warn(paste0(
-      "`cols` is now required when using unnest().\n",
-      "Please use `cols = ", expr_text(cols), "`"
-    ))
-    deprecated <- TRUE
-  }
-
-  if (missing(...)) {
-    cols <- enquo(cols)
-  } else {
-    dots <- enquos(cols, ..., .named = TRUE, .ignore_empty = "all")
-    data <- dplyr::mutate(data, !!!dots)
-
-    cols <- expr(c(!!!syms(names(dots))))
-    unnest_call <- expr(unnest(!!cols))
-    warn(paste0(
-      "unnest() has a new interface. See ?unnest for details.\n",
-      "Try `df %>% ", expr_text(unnest_call), "`, with `mutate()` if needed"
-    ))
-    deprecated <- TRUE
-  }
-
-  if (!is_missing(.drop)) {
-    lifecycle::deprecate_warn("1.0.0", "unnest(.drop = )",
-      details = "All list-columns are now preserved."
-    )
-    deprecated <- TRUE
-  }
-
-  if (!is_missing(.id)) {
-    lifecycle::deprecate_warn("1.0.0", "unnest(.id = )",
-      details = "Manually create column of names instead."
-    )
-    deprecated <- TRUE
-    first_col <- tidyselect::vars_select(tbl_vars(data), !!cols)[[1]]
-    data[[.id]] <- names(data[[first_col]])
-  }
-
-  if (!is_missing(.sep)) {
-    lifecycle::deprecate_warn("1.0.0", "unnest(.sep = )",
-      details = glue("Use `names_sep = '{.sep}'` instead.")
-    )
-    deprecated <- TRUE
-    names_sep <- .sep
-  }
-
-  if (deprecated) {
-    return(unnest(
-      data,
-      cols = !!cols,
-      names_sep = names_sep,
-      keep_empty = keep_empty,
-      ptype = ptype,
-      names_repair = tidyr_legacy
-    ))
-  }
-
-  UseMethod("unnest")
-}
-
-#' @export
-unnest.data.frame <- function(
-                              data,
-                              cols,
-                              ...,
-                              keep_empty = FALSE,
-                              ptype = NULL,
-                              names_sep = NULL,
-                              names_repair = "check_unique",
-                              .drop = "DEPRECATED",
-                              .id = "DEPRECATED",
-                              .sep = "DEPRECATED",
-                              .preserve = "DEPRECATED") {
-  cols <- tidyselect::eval_select(enquo(cols), data)
-  data <- unchop(data, any_of(cols), keep_empty = keep_empty, ptype = ptype)
-  unpack(data, any_of(cols), names_sep = names_sep, names_repair = names_repair)
-}
-
-
-#' @export
-unnest.rowwise_df <- function(
-                              data,
-                              cols,
-                              ...,
-                              keep_empty = FALSE,
-                              ptype = NULL,
-                              names_sep = NULL,
-                              names_repair = "check_unique"
-                              ) {
-
-  out <- unnest.data.frame(as_tibble(data), {{ cols }},
-    keep_empty = keep_empty,
-    ptype = ptype,
-    names_sep = names_sep,
-    names_repair = names_repair
+  cols <- with_indexed_errors(
+    map(cols, function(col) {
+      names(tidyselect::eval_select(
+        expr = col,
+        data = .data,
+        allow_rename = FALSE,
+        error_call = NULL
+      ))
+    }),
+    message = function(cnd) {
+      cli::format_inline("In expression named {.arg {cnd$name}}:")
+    },
+    .error_call = .error_call
   )
-  if (packageVersion("dplyr") > "0.8.99") {
-    out <- dplyr::grouped_df(out, dplyr::group_vars(data))
+
+  names <- names(.data)
+
+  outer <- names(tidyselect::eval_select(
+    expr = by,
+    data = .data,
+    allow_rename = FALSE,
+    error_call = .error_call
+  ))
+
+  inner <- list_unchop(cols, ptype = character(), name_spec = zap())
+  inner <- vec_unique(inner)
+
+  if (n_cols == 0L) {
+    # Derive `inner` names from `.by`
+    inner <- setdiff(names, outer)
+    cols <- list2(!!key := inner)
   }
 
-  out
+  if (quo_is_null(by)) {
+    # Derive `outer` names from `...`
+    outer <- setdiff(names, inner)
+  }
+
+  # Regenerate quosures for `pack()`
+  cols <- map(cols, function(col) {
+    quo(all_of(!!col))
+  })
+  cols <- new_quosures(cols)
+
+  list(
+    cols = cols,
+    inner = inner,
+    outer = outer
+  )
+}
+
+warn_unused_key <- function(error_call = caller_env()) {
+  message <- c(
+    "Can't supply both {.arg .key} and {.arg ...}.",
+    i = "{.arg .key} will be ignored."
+  )
+  cli::cli_warn(message, call = error_call)
+}
+
+check_key <- function(key, error_call = caller_env()) {
+  if (is_default_key(key)) {
+    "data"
+  } else {
+    check_string(key, allow_empty = FALSE, arg = ".key", call = error_call)
+    key
+  }
+}
+
+is_default_key <- function(key) {
+  if (identical(maybe_missing(key), deprecated())) {
+    # Temporary support for S3 method authors that set `.key = deprecated()`.
+    # Remove this entire helper all methods have been updated.
+    key <- NULL
+  }
+
+  is.null(key)
 }

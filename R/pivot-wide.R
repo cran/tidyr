@@ -14,13 +14,17 @@
 #' under active development.
 #'
 #' @seealso [pivot_wider_spec()] to pivot "by hand" with a data frame that
-#'   defines a pivotting specification.
+#'   defines a pivoting specification.
 #' @inheritParams pivot_longer
 #' @param id_cols <[`tidy-select`][tidyr_tidy_select]> A set of columns that
-#'   uniquely identifies each observation. Defaults to all columns in `data`
-#'   except for the columns specified in `names_from` and `values_from`.
-#'   Typically used when you have redundant variables, i.e. variables whose
-#'   values are perfectly correlated with existing variables.
+#'   uniquely identify each observation. Typically used when you have
+#'   redundant variables, i.e. variables whose values are perfectly correlated
+#'   with existing variables.
+#'
+#'   Defaults to all columns in `data` except for the columns specified through
+#'   `names_from` and `values_from`. If a tidyselect expression is supplied, it
+#'   will be evaluated on `data` after removing the columns specified through
+#'   `names_from` and `values_from`.
 #' @param id_expand Should the values in the `id_cols` columns be expanded by
 #'   [expand()] before pivoting? This results in more rows, the output will
 #'   contain a complete expansion of all possible values in `id_cols`. Implicit
@@ -149,9 +153,10 @@
 #'   pivot_wider(
 #'     names_from = wool,
 #'     values_from = breaks,
-#'     values_fn = ~mean(.x, na.rm = TRUE)
+#'     values_fn = ~ mean(.x, na.rm = TRUE)
 #'   )
 pivot_wider <- function(data,
+                        ...,
                         id_cols = NULL,
                         id_expand = FALSE,
                         names_from = name,
@@ -165,14 +170,14 @@ pivot_wider <- function(data,
                         values_from = value,
                         values_fill = NULL,
                         values_fn = NULL,
-                        unused_fn = NULL,
-                        ...) {
-  ellipsis::check_dots_used()
+                        unused_fn = NULL) {
+  # TODO: Use `check_dots_used()` after removing the `id_cols` compat behavior
   UseMethod("pivot_wider")
 }
 
 #' @export
 pivot_wider.data.frame <- function(data,
+                                   ...,
                                    id_cols = NULL,
                                    id_expand = FALSE,
                                    names_from = name,
@@ -186,8 +191,7 @@ pivot_wider.data.frame <- function(data,
                                    values_from = value,
                                    values_fill = NULL,
                                    values_fn = NULL,
-                                   unused_fn = NULL,
-                                   ...) {
+                                   unused_fn = NULL) {
   names_from <- enquo(names_from)
   values_from <- enquo(values_from)
 
@@ -200,12 +204,19 @@ pivot_wider.data.frame <- function(data,
     names_glue = names_glue,
     names_sort = names_sort,
     names_vary = names_vary,
-    names_expand = names_expand
+    names_expand = names_expand,
+    error_call = current_env()
+  )
+
+  id_cols <- compat_id_cols(
+    id_cols = {{ id_cols }},
+    ...,
+    fn_call = match.call(expand.dots = FALSE)
   )
 
   id_cols <- build_wider_id_cols_expr(
     data = data,
-    id_cols = {{id_cols}},
+    id_cols = !!id_cols,
     names_from = !!names_from,
     values_from = !!values_from
   )
@@ -218,17 +229,20 @@ pivot_wider.data.frame <- function(data,
     names_repair = names_repair,
     values_fill = values_fill,
     values_fn = values_fn,
-    unused_fn = unused_fn
+    unused_fn = unused_fn,
+    error_call = current_env()
   )
 }
 
 #' Pivot data from long to wide using a spec
 #'
-#' This is a low level interface to pivotting, inspired by the cdata package,
-#' that allows you to describe pivotting with a data frame.
+#' This is a low level interface to pivoting, inspired by the cdata package,
+#' that allows you to describe pivoting with a data frame.
 #'
 #' @keywords internal
 #' @export
+#' @inheritParams rlang::args_dots_empty
+#' @inheritParams rlang::args_error_context
 #' @inheritParams pivot_wider
 #' @param spec A specification data frame. This is useful for more complex
 #'  pivots because it gives you greater control on how metadata stored in the
@@ -239,7 +253,7 @@ pivot_wider.data.frame <- function(data,
 #'   long format of the dataset and contain values corresponding to columns
 #'   pivoted from the wide format.
 #'   The special `.seq` variable is used to disambiguate rows internally;
-#'   it is automatically removed after pivotting.
+#'   it is automatically removed after pivoting.
 #' @param id_cols <[`tidy-select`][tidyr_tidy_select]> A set of columns that
 #'   uniquely identifies each observation. Defaults to all columns in `data`
 #'   except for the columns specified in `spec$.value` and the columns of the
@@ -275,47 +289,49 @@ pivot_wider.data.frame <- function(data,
 #'   pivot_wider_spec(spec2)
 pivot_wider_spec <- function(data,
                              spec,
+                             ...,
                              names_repair = "check_unique",
                              id_cols = NULL,
                              id_expand = FALSE,
                              values_fill = NULL,
                              values_fn = NULL,
-                             unused_fn = NULL) {
-  input <- data
+                             unused_fn = NULL,
+                             error_call = current_env()) {
+  check_dots_empty0(...)
 
-  spec <- check_pivot_spec(spec)
+  spec <- check_pivot_spec(spec, call = error_call)
+  check_bool(id_expand, call = error_call)
 
   names_from_cols <- names(spec)[-(1:2)]
   values_from_cols <- vec_unique(spec$.value)
-  non_id_cols <- c(names_from_cols, values_from_cols)
 
   id_cols <- select_wider_id_cols(
     data = data,
-    id_cols = {{id_cols}},
-    non_id_cols = non_id_cols
+    id_cols = {{ id_cols }},
+    names_from_cols = names_from_cols,
+    values_from_cols = values_from_cols,
+    error_call = error_call
   )
 
-  values_fn <- check_list_of_functions(values_fn, values_from_cols, "values_fn")
+  values_fn <- check_list_of_functions(values_fn, values_from_cols, call = error_call)
 
-  unused_cols <- setdiff(names(data), c(id_cols, non_id_cols))
-  unused_fn <- check_list_of_functions(unused_fn, unused_cols, "unused_fn")
+  unused_cols <- setdiff(names(data), c(id_cols, names_from_cols, values_from_cols))
+  unused_fn <- check_list_of_functions(unused_fn, unused_cols, call = error_call)
   unused_cols <- names(unused_fn)
 
   if (is.null(values_fill)) {
     values_fill <- list()
-  }
-  if (is_scalar(values_fill)) {
+  } else if (is_scalar(values_fill)) {
     values_fill <- rep_named(values_from_cols, list(values_fill))
-  }
-  if (!vec_is_list(values_fill)) {
-    abort("`values_fill` must be NULL, a scalar, or a named list")
+  } else if (!vec_is_list(values_fill)) {
+    cli::cli_abort(
+      "{.arg values_fill} must be {.code NULL}, a scalar, or a named list, not {.obj_type_friendly {values_fill}}.",
+      call = error_call
+    )
   }
   values_fill <- values_fill[intersect(names(values_fill), values_from_cols)]
 
-  if (!is_bool(id_expand)) {
-    abort("`id_expand` must be a single `TRUE` or `FALSE`.")
-  }
-
+  input <- data
   # Early conversion to tibble because data.table returns zero rows if
   # zero cols are selected. Also want to avoid the grouped-df behavior
   # of `complete()`.
@@ -353,7 +369,8 @@ pivot_wider_spec <- function(data,
       value_locs = unused_locs,
       value_name = unused_col,
       fn = unused_fn_i,
-      fn_name = "unused_fn"
+      fn_name = "unused_fn",
+      error_call = error_call
     )
   }
 
@@ -391,7 +408,8 @@ pivot_wider_spec <- function(data,
         value_locs = value_locs,
         value_name = value_name,
         fn = value_fn,
-        fn_name = "values_fn"
+        fn_name = "values_fn",
+        error_call = error_call
       )
     }
 
@@ -402,10 +420,10 @@ pivot_wider_spec <- function(data,
       out <- vec_init(value, nrow * ncol)
     } else {
       stopifnot(vec_size(fill) == 1)
-      fill <- vec_cast(fill, value)
+      fill <- vec_cast(fill, value, call = error_call)
       out <- vec_rep_each(fill, nrow * ncol)
     }
-    vec_slice(out, value_id$row + nrow * (value_id$col - 1L)) <- value
+    out <- vec_assign(out, value_id$row + nrow * (value_id$col - 1L), value)
 
     value_out[[i]] <- chop_rectangular_df(out, value_spec$.name)
   }
@@ -418,15 +436,15 @@ pivot_wider_spec <- function(data,
     group_cols <- backtick_if_not_syntactic(group_cols)
     group_cols <- glue::glue_collapse(group_cols, sep = ", ")
 
-    warn(glue::glue(
-      "Values from {duplicate_names} are not uniquely identified; output will contain list-cols.\n",
-      "* Use `values_fn = list` to suppress this warning.\n",
-      "* Use `values_fn = {{summary_fun}}` to summarise duplicates.\n",
-      "* Use the following dplyr code to identify duplicates.\n",
-      "  {{data}} %>%\n",
-      "    dplyr::group_by({group_cols}) %>%\n",
-      "    dplyr::summarise(n = dplyr::n(), .groups = \"drop\") %>%\n",
-      "    dplyr::filter(n > 1L)"
+    cli::cli_warn(c(
+      "Values from {duplicate_names} are not uniquely identified; output will contain list-cols.",
+      "*" = "Use `values_fn = list` to suppress this warning.",
+      "*" = "Use `values_fn = {{summary_fun}}` to summarise duplicates.",
+      "*" = "Use the following dplyr code to identify duplicates.",
+      " " = "  {{data}} %>%",
+      " " = "    dplyr::group_by({group_cols}) %>%",
+      " " = "    dplyr::summarise(n = dplyr::n(), .groups = \"drop\") %>%",
+      " " = "    dplyr::filter(n > 1L)"
     ))
   }
 
@@ -440,7 +458,8 @@ pivot_wider_spec <- function(data,
     rows,
     values,
     unused,
-    .name_repair = names_repair
+    .name_repair = names_repair,
+    .error_call = error_call
   ))
 
   reconstruct_tibble(input, out)
@@ -450,6 +469,7 @@ pivot_wider_spec <- function(data,
 #' @rdname pivot_wider_spec
 #' @inheritParams pivot_wider
 build_wider_spec <- function(data,
+                             ...,
                              names_from = name,
                              values_from = value,
                              names_prefix = "",
@@ -457,22 +477,37 @@ build_wider_spec <- function(data,
                              names_glue = NULL,
                              names_sort = FALSE,
                              names_vary = "fastest",
-                             names_expand = FALSE) {
-  names_from <- tidyselect::eval_select(enquo(names_from), data)
-  values_from <- tidyselect::eval_select(enquo(values_from), data)
+                             names_expand = FALSE,
+                             error_call = current_env()) {
+  check_dots_empty0(...)
 
-  if (is_empty(names_from)) {
-    abort("`names_from` must select at least one column.")
-  }
-  if (is_empty(values_from)) {
-    abort("`values_from` must select at least one column.")
-  }
+  names_from <- tidyselect::eval_select(
+    enquo(names_from),
+    data,
+    allow_rename = FALSE,
+    allow_empty = FALSE,
+    error_call = error_call
+  )
+  values_from <- tidyselect::eval_select(
+    enquo(values_from),
+    data,
+    allow_rename = FALSE,
+    allow_empty = FALSE,
+    error_call = error_call
+  )
 
-  names_vary <- arg_match0(names_vary, c("fastest", "slowest"), arg_nm = "names_vary")
+  check_string(names_prefix, call = error_call)
+  check_string(names_sep, call = error_call)
+  check_string(names_glue, allow_null = TRUE, call = error_call)
+  check_bool(names_sort, call = error_call)
+  check_bool(names_expand, call = error_call)
 
-  if (!is_bool(names_expand)) {
-    abort("`names_expand` must be a single `TRUE` or `FALSE`.")
-  }
+  names_vary <- arg_match0(
+    arg = names_vary,
+    values = c("fastest", "slowest"),
+    arg_nm = "names_vary",
+    error_call = error_call
+  )
 
   data <- as_tibble(data)
   data <- data[names_from]
@@ -521,17 +556,28 @@ build_wider_spec <- function(data,
 build_wider_id_cols_expr <- function(data,
                                      id_cols = NULL,
                                      names_from = name,
-                                     values_from = value) {
-  # TODO: Use `allow_rename = FALSE`.
-  # Requires https://github.com/r-lib/tidyselect/issues/225.
-  names_from <- names(tidyselect::eval_select(enquo(names_from), data))
-  values_from <- names(tidyselect::eval_select(enquo(values_from), data))
-  non_id_cols <- c(names_from, values_from)
+                                     values_from = value,
+                                     error_call = caller_env()) {
+  names_from <- tidyselect::eval_select(
+    enquo(names_from),
+    data,
+    allow_rename = FALSE,
+    error_call = error_call
+  )
+
+  values_from <- tidyselect::eval_select(
+    enquo(values_from),
+    data,
+    allow_rename = FALSE,
+    error_call = error_call
+  )
 
   out <- select_wider_id_cols(
     data = data,
-    id_cols = {{id_cols}},
-    non_id_cols = non_id_cols
+    id_cols = {{ id_cols }},
+    names_from_cols = names(names_from),
+    values_from_cols = names(values_from),
+    error_call = error_call
   )
 
   expr(c(!!!out))
@@ -539,24 +585,109 @@ build_wider_id_cols_expr <- function(data,
 
 select_wider_id_cols <- function(data,
                                  id_cols = NULL,
-                                 non_id_cols = character()) {
+                                 names_from_cols = character(),
+                                 values_from_cols = character(),
+                                 error_call = caller_env()) {
   id_cols <- enquo(id_cols)
 
   # Remove known non-id-cols so they are never selected
-  data <- data[setdiff(names(data), non_id_cols)]
+  data <- data[setdiff(names(data), c(names_from_cols, values_from_cols))]
 
   if (quo_is_null(id_cols)) {
-    names(data)
-  } else {
-    # TODO: Use `allow_rename = FALSE`.
-    # Requires https://github.com/r-lib/tidyselect/issues/225.
-    names(tidyselect::eval_select(enquo(id_cols), data))
+    # Default selects everything in `data` after non-id-cols have been removed
+    return(names(data))
   }
+
+  try_fetch(
+    id_cols <- tidyselect::eval_select(
+      enquo(id_cols),
+      data,
+      allow_rename = FALSE,
+      error_call = error_call
+    ),
+    vctrs_error_subscript_oob = function(cnd) {
+      rethrow_id_cols_oob(cnd, names_from_cols, values_from_cols, error_call)
+    }
+  )
+
+  names(id_cols)
+}
+
+rethrow_id_cols_oob <- function(cnd, names_from_cols, values_from_cols, call) {
+  i <- cnd[["i"]]
+
+  check_string(i, .internal = TRUE)
+
+  if (i %in% names_from_cols) {
+    stop_id_cols_oob(i, "names_from", call = call)
+  } else if (i %in% values_from_cols) {
+    stop_id_cols_oob(i, "values_from", call = call)
+  } else {
+    # Zap this special handler, throw the normal condition
+    zap()
+  }
+}
+
+stop_id_cols_oob <- function(i, arg, call) {
+  cli::cli_abort(
+    c(
+      "`id_cols` can't select a column already selected by `{arg}`.",
+      i = "Column `{i}` has already been selected."
+    ),
+    parent = NA,
+    call = call
+  )
+}
+
+compat_id_cols <- function(id_cols,
+                           ...,
+                           fn_call,
+                           error_call = caller_env(),
+                           user_env = caller_env(2)) {
+  dots <- enquos(...)
+
+  # If `id_cols` is specified by name by the user, it will show up in the call.
+  # Otherwise, default args don't show up in the call so it won't be there.
+  user_specified_id_cols <- "id_cols" %in% names(fn_call)
+
+  # For compatibility (#1353), assign the first value of `...` to `id_cols` if:
+  # - The user didn't specify `id_cols`.
+  # - There is exactly 1 unnamed element in `...`.
+  use_compat_id_cols <-
+    !user_specified_id_cols &&
+    length(dots) == 1L &&
+    !is_named(dots)
+
+  if (use_compat_id_cols) {
+    id_cols <- dots[[1L]]
+    warn_deprecated_unnamed_id_cols(id_cols, user_env = user_env)
+  } else {
+    id_cols <- enquo(id_cols)
+    check_dots_empty0(..., call = error_call)
+  }
+
+  id_cols
+}
+
+warn_deprecated_unnamed_id_cols <- function(id_cols, user_env = caller_env(2)) {
+  id_cols <- as_label(id_cols)
+
+  lifecycle::deprecate_warn(
+    when = "1.3.0",
+    what = I(cli::format_inline(
+      "Specifying the {.arg id_cols} argument by position"
+    )),
+    details = cli::format_inline(
+      "Please explicitly name {.arg id_cols}, like {.code id_cols = {id_cols}}."
+    ),
+    always = TRUE,
+    user_env = user_env
+  )
 }
 
 # Helpers -----------------------------------------------------------------
 
-value_summarize <- function(value, value_locs, value_name, fn, fn_name) {
+value_summarize <- function(value, value_locs, value_name, fn, fn_name, error_call = caller_env()) {
   value <- vec_chop(value, value_locs)
 
   if (identical(fn, list)) {
@@ -572,18 +703,16 @@ value_summarize <- function(value, value_locs, value_name, fn, fn_name) {
   if (any(invalid_sizes)) {
     size <- sizes[invalid_sizes][[1]]
 
-    header <- glue(
-      "Applying `{fn_name}` to `{value_name}` must result in ",
-      "a single summary value per key."
+    cli::cli_abort(
+      c(
+        "Applying {.arg {fn_name}} to {.var {value_name}} must result in a single summary value per key.",
+        i = "Applying {.arg {fn_name}} resulted in a vector of length {size}."
+      ),
+      call = error_call
     )
-    bullet <- c(
-      x = glue("Applying `{fn_name}` resulted in a value with length {size}.")
-    )
-
-    abort(c(header, bullet))
   }
 
-  value <- vec_c(!!!value)
+  value <- list_unchop(value)
 
   value
 }

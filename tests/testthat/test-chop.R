@@ -20,9 +20,12 @@ test_that("grouping is preserved", {
   expect_equal(dplyr::group_vars(out), "g")
 })
 
-test_that("`cols` is required (#1205)", {
+test_that("chop() validates its input `cols` (#1205)", {
   df <- tibble(x = 1:2)
-  expect_snapshot((expect_error(chop(df))))
+  expect_snapshot(error = TRUE, {
+    chop(df$x)
+    chop(df)
+  })
 })
 
 test_that("can chop empty data frame (#1206)", {
@@ -304,4 +307,50 @@ test_that("unchopping drops outer names", {
   df <- tibble(col = list(a = 1, b = 2:3))
   out <- unchop(df, col)
   expect_named(out$col, NULL)
+})
+
+test_that("unchop disallows renaming", {
+  df <- tibble(x = list(1))
+
+  expect_snapshot(error = TRUE, {
+    unchop(df, c(y = x))
+  })
+})
+
+test_that("unchop works on foreign list types recognized by `vec_is_list()` (#1327)", {
+  new_foo <- function(...) {
+    structure(list(...), class = c("foo", "list"))
+  }
+
+  df <- tibble(x = new_foo(1L, 2:3))
+  expect_identical(unchop(df, x), tibble(x = 1:3))
+
+  # With empty list
+  df <- tibble(x = new_foo())
+  expect_identical(unchop(df, x), tibble(x = unspecified()))
+
+  # With empty types
+  df <- tibble(x = new_foo(1L, integer()))
+  expect_identical(unchop(df, x), tibble(x = 1L))
+  expect_identical(unchop(df, x, keep_empty = TRUE), tibble(x = c(1L, NA)))
+
+  # With `NULL`s
+  df <- tibble(x = new_foo(1L, NULL))
+  expect_identical(unchop(df, x), tibble(x = 1L))
+  expect_identical(unchop(df, x, keep_empty = TRUE), tibble(x = c(1L, NA)))
+
+  # With custom `ptype`
+  df <- tibble(x = new_foo(1, 3L))
+  expect_identical(unchop(df, x, ptype = integer()), tibble(x = c(1L, 3L)))
+})
+
+test_that("unchop validates its inputs", {
+  df <- tibble(col = list(a = 1, b = 2:3))
+
+  expect_snapshot(error = TRUE, {
+    unchop(1:10)
+    unchop(df)
+    unchop(df, col, keep_empty = 1)
+    unchop(df, col, ptype = 1)
+  })
 })

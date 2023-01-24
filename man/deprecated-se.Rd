@@ -86,12 +86,12 @@ unnest_(...)
 \item{fill}{A named list that for each variable supplies a single value to
 use instead of \code{NA} for missing combinations.}
 
-\item{...}{Specification of columns to expand. Columns can be atomic vectors
-or lists.
+\item{...}{<\code{\link[=tidyr_data_masking]{data-masking}}> Specification of columns
+to expand or complete. Columns can be atomic vectors or lists.
 \itemize{
 \item To find all unique combinations of \code{x}, \code{y} and \code{z}, including those not
 present in the data, supply each variable as a separate argument:
-\code{expand(df, x, y, z)}.
+\code{expand(df, x, y, z)} or \code{complete(df, x, y, z)}.
 \item To find only the combinations that occur in the
 data, use \code{nesting}: \code{expand(df, nesting(x, y, z))}.
 \item You can combine the two forms. For example,
@@ -100,9 +100,9 @@ a row for each present school-student combination for all possible
 dates.
 }
 
-When used with factors, \code{expand()} uses the full set of levels, not just
-those that appear in the data. If you want to use only the values seen in
-the data, use \code{forcats::fct_drop()}.
+When used with factors, \code{\link[=expand]{expand()}} and \code{\link[=complete]{complete()}} use the full set of
+levels, not just those that appear in the data. If you want to use only the
+values seen in the data, use \code{forcats::fct_drop()}.
 
 When used with continuous variables, you may need to fill in values
 that do not appear in the data: to do so use expressions like
@@ -145,15 +145,14 @@ value column is \code{NA}.}
 stored as a character vector. If \code{TRUE}, will be stored as a factor,
 which preserves the original ordering of the columns.}
 
-\item{sep}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}:
-use \code{names_sep} instead.}
+\item{sep}{Separator delimiting collapsed values.}
 
 \item{extra}{If \code{sep} is a character vector, this controls what
 happens when there are too many pieces. There are three valid options:
 \itemize{
-\item "warn" (the default): emit a warning and drop extra values.
-\item "drop": drop any extra values without a warning.
-\item "merge": only splits at most \code{length(into)} times
+\item \code{"warn"} (the default): emit a warning and drop extra values.
+\item \code{"drop"}: drop any extra values without a warning.
+\item \code{"merge"}: only splits at most \code{length(into)} times
 }}
 
 \item{drop}{If \code{FALSE}, will keep factor levels that don't appear in the

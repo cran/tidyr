@@ -22,18 +22,20 @@
 #' the type of its elements, `unchop()` is able to reconstitute the
 #' correct vector type even for empty list-columns.
 #'
+#' @inheritParams rlang::args_dots_empty
+#' @inheritParams rlang::args_error_context
+#'
 #' @param data A data frame.
-#' @param cols <[`tidy-select`][tidyr_tidy_select]> Columns to chop or unchop
-#'   (automatically quoted).
+#' @param cols <[`tidy-select`][tidyr_tidy_select]> Columns to chop or unchop.
 #'
 #'   For `unchop()`, each column should be a list-column containing generalised
 #'   vectors (e.g. any mix of `NULL`s, atomic vector, S3 vectors, a lists,
 #'   or data frames).
 #' @param keep_empty By default, you get one row of output for each element
-#'   of the list your unchopping/unnesting. This means that if there's a
-#'   size-0 element (like `NULL` or an empty data frame), that entire row
-#'   will be dropped from the output. If you want to preserve all rows,
-#'   use `keep_empty = TRUE` to replace size-0 elements with a single row
+#'   of the list that you are unchopping/unnesting. This means that if there's a
+#'   size-0 element (like `NULL` or an empty data frame or vector), then that
+#'   entire row will be dropped from the output. If you want to preserve all
+#'   rows, use `keep_empty = TRUE` to replace size-0 elements with a single row
 #'   of missing values.
 #' @param ptype Optionally, a named list of column name-prototype pairs to
 #'   coerce `cols` to, overriding the default that will be guessed from
@@ -41,7 +43,7 @@
 #'   can be supplied, which will be applied to all `cols`.
 #' @export
 #' @examples
-#' # Chop ==============================================================
+#' # Chop ----------------------------------------------------------------------
 #' df <- tibble(x = c(1, 1, 1, 2, 2, 3), y = 1:6, z = 6:1)
 #' # Note that we get one row of output for each unique combination of
 #' # non-chopped variables
@@ -49,26 +51,31 @@
 #' # cf nest
 #' df %>% nest(data = c(y, z))
 #'
-#' # Unchop ============================================================
+#' # Unchop --------------------------------------------------------------------
 #' df <- tibble(x = 1:4, y = list(integer(), 1L, 1:2, 1:3))
 #' df %>% unchop(y)
 #' df %>% unchop(y, keep_empty = TRUE)
 #'
-#' # Incompatible types -------------------------------------------------
-#' # If the list-col contains types that can not be natively
+#' # unchop will error if the types are not compatible:
 #' df <- tibble(x = 1:2, y = list("1", 1:3))
 #' try(df %>% unchop(y))
 #'
-#' # Unchopping data frames -----------------------------------------------------
 #' # Unchopping a list-col of data frames must generate a df-col because
 #' # unchop leaves the column names unchanged
 #' df <- tibble(x = 1:3, y = list(NULL, tibble(x = 1), tibble(y = 1:2)))
 #' df %>% unchop(y)
 #' df %>% unchop(y, keep_empty = TRUE)
-chop <- function(data, cols) {
-  check_present(cols)
-  # TODO: `allow_rename = FALSE`
-  cols <- tidyselect::eval_select(enquo(cols), data)
+chop <- function(data, cols, ..., error_call = current_env()) {
+  check_dots_empty0(...)
+  check_data_frame(data, call = error_call)
+  check_required(cols, call = error_call)
+
+  cols <- tidyselect::eval_select(
+    expr = enquo(cols),
+    data = data,
+    allow_rename = FALSE,
+    error_call = error_call
+  )
 
   cols <- tidyr_new_list(data[cols])
   keys <- data[setdiff(names(data), names(cols))]
@@ -82,7 +89,7 @@ chop <- function(data, cols) {
   cols <- map(cols, col_chop, indices = indices)
   cols <- new_data_frame(cols, n = size)
 
-  out <- vec_cbind(keys, cols)
+  out <- vec_cbind(keys, cols, .error_call = error_call)
 
   reconstruct_tibble(data, out)
 }
@@ -98,8 +105,23 @@ col_chop <- function(x, indices) {
 
 #' @export
 #' @rdname chop
-unchop <- function(data, cols, keep_empty = FALSE, ptype = NULL) {
-  sel <- tidyselect::eval_select(enquo(cols), data)
+unchop <- function(data,
+                   cols,
+                   ...,
+                   keep_empty = FALSE,
+                   ptype = NULL,
+                   error_call = current_env()) {
+  check_dots_empty0(...)
+  check_data_frame(data, call = error_call)
+  check_required(cols, call = error_call)
+  check_bool(keep_empty, call = error_call)
+
+  sel <- tidyselect::eval_select(
+    expr = enquo(cols),
+    data = data,
+    allow_rename = FALSE,
+    error_call = error_call
+  )
 
   size <- vec_size(data)
   names <- names(data)
@@ -111,7 +133,12 @@ unchop <- function(data, cols, keep_empty = FALSE, ptype = NULL) {
   # Remove unchopped columns to avoid slicing them needlessly later
   out[sel] <- NULL
 
-  result <- df_unchop(cols, ptype = ptype, keep_empty = keep_empty)
+  result <- df_unchop(
+    x = cols,
+    ptype = ptype,
+    keep_empty = keep_empty,
+    error_call = error_call
+  )
   cols <- result$val
   loc <- result$loc
 
@@ -141,17 +168,10 @@ unchop <- function(data, cols, keep_empty = FALSE, ptype = NULL) {
 #   used to slice the data frame `x` was subset from to align it with `val`.
 # - `val` the unchopped data frame.
 
-df_unchop <- function(x, ..., ptype = NULL, keep_empty = FALSE) {
-  ellipsis::check_dots_empty()
+df_unchop <- function(x, ..., ptype = NULL, keep_empty = FALSE, error_call = caller_env()) {
+  check_dots_empty()
 
-  if (!is.data.frame(x)) {
-    abort("`x` must be a data frame.")
-  }
-  if (!is_bool(keep_empty)) {
-    abort("`keep_empty` must be a single `TRUE` or `FALSE`.")
-  }
-
-  ptype <- check_list_of_ptypes(ptype, names = names(x), arg = "ptype")
+  ptype <- check_list_of_ptypes(ptype, names = names(x), call = error_call)
 
   size <- vec_size(x)
 
@@ -159,7 +179,7 @@ df_unchop <- function(x, ..., ptype = NULL, keep_empty = FALSE) {
   x <- new_data_frame(x, n = size)
 
   width <- length(x)
-  names <- names(x)
+  x_names <- names(x)
 
   seq_len_width <- seq_len(width)
   seq_len_size <- seq_len(size)
@@ -171,6 +191,10 @@ df_unchop <- function(x, ..., ptype = NULL, keep_empty = FALSE) {
     return(out)
   }
 
+  x_ptypes <- map2(x, x_names, function(col, name) {
+    ptype[[name]] %||% list_of_ptype(col)
+  })
+
   x_is_list <- map_lgl(x, vec_is_list)
 
   x_sizes <- vector("list", length = width)
@@ -178,6 +202,8 @@ df_unchop <- function(x, ..., ptype = NULL, keep_empty = FALSE) {
 
   for (i in seq_len_width) {
     col <- x[[i]]
+    col_name <- x_names[[i]]
+    col_ptype <- x_ptypes[[i]]
     col_is_list <- x_is_list[[i]]
 
     if (!col_is_list) {
@@ -187,21 +213,29 @@ df_unchop <- function(x, ..., ptype = NULL, keep_empty = FALSE) {
       next
     }
 
+    col <- tidyr_new_list(col)
+    col_sizes <- list_sizes(col)
+    col_nulls <- vec_detect_missing(col)
+
     # Always replace `NULL` elements with size 1 missing equivalent for recycling.
     # These will be reset to `NULL` in `unchop_finalize()` if the
     # entire row was missing and `keep_empty = FALSE`.
-    info <- list_init_empty(
-      x = col,
-      null = TRUE,
-      typed = keep_empty
-    )
+    info <- list_replace_null(col, col_sizes, ptype = col_ptype)
+    col <- info$x
+    col_sizes <- info$sizes
 
-    x[[i]] <- info$x
-    x_sizes[[i]] <- info$sizes
-    x_nulls[[i]] <- info$null
+    if (keep_empty) {
+      info <- list_replace_empty_typed(col, col_sizes, ptype = col_ptype)
+      col <- info$x
+      col_sizes <- info$sizes
+    }
+
+    x[[i]] <- col
+    x_sizes[[i]] <- col_sizes
+    x_nulls[[i]] <- col_nulls
   }
 
-  sizes <- reduce(x_sizes, unchop_sizes2)
+  sizes <- reduce(x_sizes, unchop_sizes2, error_call = error_call)
 
   info <- unchop_finalize(x, sizes, x_nulls, keep_empty)
   x <- info$x
@@ -214,39 +248,36 @@ df_unchop <- function(x, ..., ptype = NULL, keep_empty = FALSE) {
 
   for (i in seq_len_width) {
     col <- x[[i]]
-    col_name <- names[[i]]
+    col_name <- x_names[[i]]
+    col_ptype <- x_ptypes[[i]]
     col_is_list <- x_is_list[[i]]
-
-    col_ptype <- ptype[[col_name]]
+    col_sizes <- x_sizes[[i]]
 
     if (!col_is_list) {
       if (!is_null(col_ptype)) {
-        col <- vec_cast(col, col_ptype, x_arg = col_name)
+        col <- vec_cast(col, col_ptype, x_arg = col_name, call = error_call)
       }
       out_cols[[i]] <- vec_slice(col, out_loc)
       next
     }
 
-    col_ptype <- col_ptype %||% attr(col, "ptype", exact = TRUE)
-
-    # Drop to a bare list to avoid dispatch
-    col <- unclass(col)
-
     # Drop outer names because inner elements have varying size
     col <- unname(col)
 
-    col_sizes <- x_sizes[[i]]
     row_recycle <- col_sizes != sizes
-    col[row_recycle] <- map2(col[row_recycle], sizes[row_recycle], vec_recycle)
+    col[row_recycle] <- map2(col[row_recycle], sizes[row_recycle], vec_recycle, call = error_call)
 
-    col <- vec_unchop(col, ptype = col_ptype)
+    col <- list_unchop(col, ptype = col_ptype)
 
     if (is_null(col)) {
       # This can happen when both of these are true:
       # - `col` was an empty list(), or a list of all `NULL`s.
       # - No ptype was specified for `col`, either by the user or by a list-of.
       if (out_size != 0L) {
-        abort("Internal error: `NULL` column generated, but output size is not `0`.")
+        cli::cli_abort(
+          "`NULL` column generated, but output size is not `0`.",
+          .internal = TRUE
+        )
       }
 
       col <- unspecified(0L)
@@ -255,7 +286,7 @@ df_unchop <- function(x, ..., ptype = NULL, keep_empty = FALSE) {
     out_cols[[i]] <- col
   }
 
-  names(out_cols) <- names
+  names(out_cols) <- x_names
   out_val <- new_data_frame(out_cols, n = out_size)
 
   out <- list(loc = out_loc, val = out_val)
@@ -264,7 +295,7 @@ df_unchop <- function(x, ..., ptype = NULL, keep_empty = FALSE) {
   out
 }
 
-unchop_sizes2 <- function(x, y) {
+unchop_sizes2 <- function(x, y, error_call) {
   # Standard tidyverse recycling rules, just vectorized.
 
   # Recycle `x` values with `y`
@@ -286,7 +317,10 @@ unchop_sizes2 <- function(x, y) {
     row <- which(incompatible)[[1]]
     x <- x[[row]]
     y <- y[[row]]
-    abort(glue("In row {row}, can't recycle input of size {x} to size {y}."))
+    cli::cli_abort(
+      "In row {row}, can't recycle input of size {x} to size {y}.",
+      call = error_call
+    )
   }
 
   x

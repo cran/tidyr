@@ -1,11 +1,14 @@
 #' Replace NAs with specified values
 #'
 #' @param data A data frame or vector.
-#' @param replace If `data` is a data frame, `replace` takes a list of values,
-#'   with one value for each column that has `NA` values to be replaced.
+#' @param replace If `data` is a data frame, `replace` takes a named list of
+#'   values, with one value for each column that has missing values to be
+#'   replaced. Each value in `replace` will be cast to the type of the column
+#'   in `data` that it being used as a replacement in.
 #'
 #'   If `data` is a vector, `replace` takes a single value. This single value
-#'   replaces all of the `NA` values in the vector.
+#'   replaces all of the missing values in the vector. `replace` will be cast
+#'   to the type of `data`.
 #' @param ... Additional arguments for methods. Currently unused.
 #' @return
 #' `replace_na()` returns an object with the same type as `data`.
@@ -27,7 +30,7 @@
 #' df_list <- tibble(z = list(1:5, NULL, 10:20))
 #' df_list %>% replace_na(list(z = list(5)))
 replace_na <- function(data, replace, ...) {
-  ellipsis::check_dots_used()
+  check_dots_used()
   UseMethod("replace_na")
 }
 
@@ -35,20 +38,18 @@ replace_na <- function(data, replace, ...) {
 replace_na.default <- function(data, replace = NA, ...) {
   check_replacement(replace, "data")
 
-  if (is.null(data)) {
-    # TODO: Remove branch when https://github.com/r-lib/vctrs/pull/1497 is fixed
-    missing <- logical(0L)
-  } else {
-    missing <- vec_equal_na(data)
+  if (vec_any_missing(data)) {
+    missing <- vec_detect_missing(data)
+    data <- vec_assign(data, missing, replace, x_arg = "data", value_arg = "replace")
   }
 
-  vec_assign(data, missing, replace, x_arg = "data", value_arg = "replace")
+  data
 }
 
 #' @export
 replace_na.data.frame <- function(data, replace = list(), ...) {
   if (!vec_is_list(replace)) {
-    abort("`replace` must be a list.")
+    cli::cli_abort("{.arg replace} must be a list, not {.obj_type_friendly {replace}}.")
   }
 
   names <- intersect(names(replace), names(data))
@@ -67,24 +68,29 @@ replace_na.data.frame <- function(data, replace = list(), ...) {
 
     check_replacement(value, col_arg)
 
-    missing <- vec_equal_na(col)
+    if (vec_any_missing(col)) {
+      missing <- vec_detect_missing(col)
 
-    data[[name]] <- vec_assign(
-      x = col,
-      i = missing,
-      value = value,
-      x_arg = col_arg,
-      value_arg = value_arg
-    )
+      data[[name]] <- vec_assign(
+        x = col,
+        i = missing,
+        value = value,
+        x_arg = col_arg,
+        value_arg = value_arg
+      )
+    }
   }
 
   data
 }
 
-check_replacement <- function(x, var) {
+check_replacement <- function(x, var, call = caller_env()) {
   n <- vec_size(x)
 
   if (n != 1) {
-    abort(glue("Replacement for `{var}` is length {n}, not length 1."))
+    cli::cli_abort(
+      "Replacement for `{var}` must be length 1, not length {n}.",
+      call = call
+    )
   }
 }

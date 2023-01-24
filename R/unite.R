@@ -13,7 +13,7 @@
 #'   tidyverse; we support it here for backward compatibility).
 #' @param ... <[`tidy-select`][tidyr_tidy_select]> Columns to unite
 #' @param sep Separator to use between values.
-#' @param na.rm If `TRUE`, missing values will be remove prior to uniting
+#' @param na.rm If `TRUE`, missing values will be removed prior to uniting
 #'   each value.
 #' @param remove If `TRUE`, remove input columns from output data frame.
 #' @seealso [separate()], the complement.
@@ -32,17 +32,20 @@
 #'   separate(xy, c("x", "y"))
 #' # (but note `x` and `y` contain now "NA" not NA)
 unite <- function(data, col, ..., sep = "_", remove = TRUE, na.rm = FALSE) {
-  ellipsis::check_dots_unnamed()
+  check_dots_unnamed()
   UseMethod("unite")
 }
 #' @export
 unite.data.frame <- function(data, col, ..., sep = "_", remove = TRUE, na.rm = FALSE) {
-  var <- as_string(ensym2(col))
+  check_required(col)
+  check_string(sep)
+  check_bool(remove)
+  check_bool(na.rm)
 
   if (dots_n(...) == 0) {
     from_vars <- set_names(seq_along(data), names(data))
   } else {
-    from_vars <- tidyselect::eval_select(expr(c(...)), data)
+    from_vars <- tidyselect::eval_select(expr(c(...)), data, allow_rename = FALSE)
   }
 
   out <- data
@@ -60,7 +63,16 @@ unite.data.frame <- function(data, col, ..., sep = "_", remove = TRUE, na.rm = F
     united <- exec(paste, !!!cols, sep = sep)
   }
 
+  var <- as_string(ensym(col))
+  var <- enc2utf8(var)
+
+  united <- list(united)
+  names(united) <- var
+
   first_pos <- which(names(data) %in% names(from_vars))[1]
-  out <- append_col(out, united, var, after = first_pos - 1L)
+  after <- first_pos - 1L
+
+  out <- df_append(out, united, after = after)
+
   reconstruct_tibble(data, out, if (remove) names(from_vars))
 }

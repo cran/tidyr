@@ -34,7 +34,7 @@ test_that("extract keeps characters as character", {
 
 test_that("can combine into multiple columns", {
   df <- tibble(x = "abcd")
-  out <- extract(df, x, c("a", "b", "a" , "b"), "(.)(.)(.)(.)", convert = TRUE)
+  out <- extract(df, x, c("a", "b", "a", "b"), "(.)(.)(.)(.)", convert = TRUE)
   expect_equal(out, tibble(a = "ac", b = "bd"))
 })
 
@@ -81,4 +81,15 @@ test_that("str_match_first handles edge cases", {
     str_match_first(character(), "(.)-(.)"),
     list(character(), character())
   )
+})
+
+test_that("validates its inputs", {
+  df <- data.frame(x = letters)
+
+  expect_snapshot(error = TRUE, {
+    df %>% extract()
+    df %>% extract(x, regex = 1)
+    df %>% extract(x, into = 1:3)
+    df %>% extract(x, into = "x", convert = 1)
+  })
 })

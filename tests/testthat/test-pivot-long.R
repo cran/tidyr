@@ -144,6 +144,29 @@ test_that("type error message use variable names", {
   expect_equal(err$y_arg, "xyz")
 })
 
+test_that("when `values_ptypes` is provided, the type error uses variable names (#1364)", {
+  df <- tibble(x = 1)
+
+  expect_snapshot({
+    (expect_error(pivot_longer(df, x, values_ptypes = character())))
+  })
+})
+
+test_that("when `names_ptypes` is provided, the type error uses `names_to` names (#1364)", {
+  df <- tibble(x = 1)
+
+  expect_snapshot({
+    (expect_error({
+      pivot_longer(
+        df,
+        cols = x,
+        names_to = "name",
+        names_ptypes = double()
+      )
+    }))
+  })
+})
+
 test_that("error when overwriting existing column", {
   df <- tibble(x = 1, y = 2)
 
@@ -172,6 +195,50 @@ test_that("zero row data frame works", {
   expect_named(pv, c("name", "value"))
   expect_equal(pv$name, character())
   expect_equal(pv$value, integer())
+})
+
+test_that("`cols_vary` can adjust the resulting row ordering (#1312)", {
+  df <- tibble(x = c(1, 2), y = c(3, 4))
+
+  expect_identical(
+    pivot_longer(df, c(x, y), cols_vary = "fastest"),
+    tibble(name = c("x", "y", "x", "y"), value = c(1, 3, 2, 4))
+  )
+  expect_identical(
+    pivot_longer(df, c(x, y), cols_vary = "slowest"),
+    tibble(name = c("x", "x", "y", "y"), value = c(1, 2, 3, 4))
+  )
+})
+
+test_that("`cols_vary` works with id columns not part of the pivoting process", {
+  df <- tibble(id = c("a", "b"), x = c(1, 2), y = c(3, 4))
+
+  out <- pivot_longer(df, c(x, y), cols_vary = "fastest")
+  expect_identical(out$id, c("a", "a", "b", "b"))
+  expect_identical(
+    out[c("name", "value")],
+    pivot_longer(df[c("x", "y")], c(x, y), cols_vary = "fastest")
+  )
+
+  out <- pivot_longer(df, c(x, y), cols_vary = "slowest")
+  expect_identical(out$id, c("a", "b", "a", "b"))
+  expect_identical(
+    out[c("name", "value")],
+    pivot_longer(df[c("x", "y")], c(x, y), cols_vary = "slowest")
+  )
+})
+
+test_that("adjusting `cols_vary` works fine with `values_drop_na`", {
+  df <- tibble(id = c("a", "b"), x = c(1, NA), y = c(3, 4))
+
+  expect_identical(
+    pivot_longer(df, c(x, y), cols_vary = "slowest", values_drop_na = TRUE),
+    tibble(
+      id = c("a", "a", "b"),
+      name = c("x", "y", "y"),
+      value = c(1, 3, 4)
+    )
+  )
 })
 
 # spec --------------------------------------------------------------------
@@ -306,6 +373,22 @@ test_that("`names_ptypes` and `names_transform` work with single values (#1284)"
   expect_identical(res$two, 2L)
 })
 
+test_that("`names_ptypes = list()` is interpreted as recycling <list> for all name columns (#1296)", {
+  df <- tibble(`1x2` = 1)
+
+  res <- build_longer_spec(
+    data = df,
+    cols = `1x2`,
+    names_to = c("one", "two"),
+    names_sep = "x",
+    names_transform = as.list,
+    names_ptypes = list()
+  )
+
+  expect_identical(res$one, list("1"))
+  expect_identical(res$two, list("2"))
+})
+
 test_that("`values_ptypes` works with single empty ptypes (#1284)", {
   df <- tibble(x_1 = 1, y_1 = 2)
 
@@ -319,6 +402,21 @@ test_that("`values_ptypes` works with single empty ptypes (#1284)", {
 
   expect_identical(res$x, 1L)
   expect_identical(res$y, 2L)
+})
+
+test_that("`values_ptypes = list()` is interpreted as recycling <list> for all value columns (#1296)", {
+  df <- tibble(x_1 = list_of(1L, 2:3, 4L), y_1 = list_of(2:3, 4L, 5:6))
+
+  res <- pivot_longer(
+    data = df,
+    cols = everything(),
+    names_to = c(".value", "set"),
+    names_sep = "_",
+    values_ptypes = list()
+  )
+
+  expect_identical(res$x, vec_cast(df$x_1, list()))
+  expect_identical(res$y, vec_cast(df$y_1, list()))
 })
 
 test_that("`values_transform` works with single functions (#1284)", {
@@ -336,25 +434,15 @@ test_that("`values_transform` works with single functions (#1284)", {
   expect_identical(res$y, "2")
 })
 
-test_that("`names/values_ptypes = list()` is currently the same as `NULL` (#1296)", {
-  # Because of some backwards compatibility support
-
-  df <- tibble(x = 1)
-
-  expect_identical(
-    pivot_longer(df, x, names_ptypes = list()),
-    pivot_longer(df, x, names_ptypes = NULL)
-  )
-  expect_identical(
-    pivot_longer(df, x, values_ptypes = list()),
-    pivot_longer(df, x, values_ptypes = NULL)
-  )
-})
-
 test_that("Error if the `col` can't be selected.", {
   expect_snapshot({
     (expect_error(pivot_longer(iris, matches("foo"))))
   })
+})
+
+test_that("named `cols` gives clear error (#1104)", {
+  df <- data.frame(x = 1, y = 2)
+  expect_snapshot(pivot_longer(df, c(z = y)), error = TRUE)
 })
 
 test_that("`names_to` is validated", {
@@ -400,5 +488,42 @@ test_that("`values_transform` is validated", {
   expect_snapshot({
     (expect_error(pivot_longer(df, x, values_transform = 1)))
     (expect_error(pivot_longer(df, x, values_transform = list(~.x))))
+  })
+})
+
+test_that("`cols_vary` is validated", {
+  df <- tibble(x = 1)
+
+  expect_snapshot({
+    (expect_error(pivot_longer(df, x, cols_vary = "fast")))
+    (expect_error(pivot_longer(df, x, cols_vary = 1)))
+  })
+})
+
+test_that("`pivot_longer()` catches unused input passed through the dots", {
+  df <- tibble(id = c("a", "b"), x = c(1, 2), y = c(3, 4))
+
+  expect_snapshot({
+    (expect_error(pivot_longer(df, c(x, y), 1)))
+    (expect_error(pivot_longer(df, c(x, y), col_vary = "slowest")))
+  })
+})
+
+test_that("`build_longer_spec()` requires empty dots", {
+  df <- tibble(id = c("a", "b"), x = c(1, 2), y = c(3, 4))
+
+  expect_snapshot({
+    (expect_error(build_longer_spec(df, c(x, y), 1)))
+    (expect_error(build_longer_spec(df, c(x, y), name_to = "name")))
+  })
+})
+
+test_that("`pivot_longer_spec()` requires empty dots", {
+  df <- tibble(id = c("a", "b"), x = c(1, 2), y = c(3, 4))
+  spec <- build_longer_spec(df, c(x, y))
+
+  expect_snapshot({
+    (expect_error(pivot_longer_spec(df, spec, 1)))
+    (expect_error(pivot_longer_spec(df, spec, col_vary = "slowest")))
   })
 })

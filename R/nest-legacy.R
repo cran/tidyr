@@ -41,7 +41,7 @@
 #' @export
 #' @examples
 #' # Nest and unnest are inverses
-#' df <- data.frame(x = c(1, 1, 2), y = 3:1)
+#' df <- tibble(x = c(1, 1, 2), y = 3:1)
 #' df %>% nest_legacy(y)
 #' df %>% nest_legacy(y) %>% unnest_legacy()
 #'
@@ -75,8 +75,7 @@ nest_legacy <- function(data, ..., .key = "data") {
 #' @importFrom utils packageVersion
 #' @export
 nest_legacy.tbl_df <- function(data, ..., .key = "data") {
-
-  key_var   <- as_string(ensym2(.key))
+  key_var <- as_string(ensym(.key))
   nest_vars <- unname(tidyselect::vars_select(names(data), ...))
 
   if (is_empty(nest_vars)) {
@@ -92,17 +91,13 @@ nest_legacy.tbl_df <- function(data, ..., .key = "data") {
 
   data <- dplyr::ungroup(data)
   if (is_empty(group_vars)) {
-    return(tibble(!! key_var := list(data)))
+    return(tibble(!!key_var := list(data)))
   }
 
-  out <- dplyr::select(data, !!! syms(group_vars))
+  out <- dplyr::select(data, !!!syms(group_vars))
 
-  if (packageVersion("dplyr") < "0.8.0") {
-    idx <- dplyr::group_indices(data, !!! syms(group_vars))
-  } else {
-    grouped_data <- dplyr::group_by(data, !!! syms(group_vars), .drop = TRUE)
-    idx <- dplyr::group_indices(grouped_data)
-  }
+  grouped_data <- dplyr::group_by(data, !!!syms(group_vars), .drop = TRUE)
+  idx <- dplyr::group_indices(grouped_data)
 
   representatives <- which(!duplicated(idx))
 
@@ -120,7 +115,7 @@ nest_legacy.data.frame <- function(data, ..., .key = "data") {
     data <- tibble::as_tibble(data)
   }
 
-  nest_legacy.tbl_df(data, ..., .key = !! .key)
+  nest_legacy.tbl_df(data, ..., .key = !!.key)
 }
 
 
@@ -132,7 +127,6 @@ unnest_legacy <- function(data, ..., .drop = NA, .id = NULL, .sep = NULL, .prese
 #' @export
 unnest_legacy.data.frame <- function(data, ..., .drop = NA, .id = NULL,
                                      .sep = NULL, .preserve = NULL) {
-
   preserve <- tidyselect::vars_select(names(data), !!enquo(.preserve))
   quos <- quos(...)
   if (is_empty(quos)) {
@@ -146,19 +140,19 @@ unnest_legacy.data.frame <- function(data, ..., .drop = NA, .id = NULL,
     return(data)
   }
 
-  nested <- dplyr::transmute(dplyr::ungroup(data), !!! quos)
+  nested <- dplyr::transmute(dplyr::ungroup(data), !!!quos)
   n <- map(nested, function(x) unname(map_int(x, NROW)))
   if (length(unique(n)) != 1) {
-    abort("All nested columns must have the same number of elements.")
+    cli::cli_abort("All nested columns must have the same number of elements.")
   }
 
   types <- map_chr(nested, list_col_type)
   nest_types <- split.default(nested, types)
   if (length(nest_types$mixed) > 0) {
-    probs <- paste(names(nest_types$mixed), collapse = ",")
-    abort(glue(
-      "Each column must either be a list of vectors or a list of ",
-      "data frames [{probs}]"
+    probs <- names(nest_types$mixed)
+    cli::cli_abort(c(
+      "Each column must either be a list of vectors or a list of data frames.",
+      i = "Problems in: {.var {probs}}"
     ))
   }
 
@@ -167,7 +161,7 @@ unnest_legacy.data.frame <- function(data, ..., .drop = NA, .id = NULL,
     unnested_atomic <- dplyr::bind_cols(unnested_atomic)
   }
 
-  unnested_dataframe <- map(nest_types$dataframe %||% list(), function(.){
+  unnested_dataframe <- map(nest_types$dataframe %||% list(), function(.) {
     if (length(.) == 0L) {
       attr(., "ptype") %||% data.frame()
     } else {
@@ -231,7 +225,7 @@ enframe <- function(x, col_name, .id = NULL) {
   }
 
   col <- unname(x)
-  col <- vec_unchop(col)
+  col <- list_unchop(col)
 
   out <- set_names(list(col), col_name)
   out <- as_tibble(out)

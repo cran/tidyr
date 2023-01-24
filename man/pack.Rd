@@ -5,18 +5,28 @@
 \alias{unpack}
 \title{Pack and unpack}
 \usage{
-pack(.data, ..., .names_sep = NULL)
+pack(.data, ..., .names_sep = NULL, .error_call = current_env())
 
-unpack(data, cols, names_sep = NULL, names_repair = "check_unique")
+unpack(
+  data,
+  cols,
+  ...,
+  names_sep = NULL,
+  names_repair = "check_unique",
+  error_call = current_env()
+)
 }
 \arguments{
-\item{...}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> Columns to pack, specified
-using name-variable pairs of the form \code{new_col = c(col1, col2, col3)}.
-The right hand side can be any valid tidy select expression.}
+\item{...}{For \code{pack()}, <\code{\link[=tidyr_tidy_select]{tidy-select}}> columns to
+pack, specified using name-variable pairs of the form
+\code{new_col = c(col1, col2, col3)}. The right hand side can be any valid tidy
+select expression.
+
+For \code{unpack()}, these dots are for future extensions and must be empty.}
 
 \item{data, .data}{A data frame.}
 
-\item{cols}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> Column to unpack.}
+\item{cols}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> Columns to unpack.}
 
 \item{names_sep, .names_sep}{If \code{NULL}, the default, the names will be left
 as is. In \code{pack()}, inner names will come from the former outer names;
@@ -32,10 +42,10 @@ packing and unpacking.}
 \item{names_repair}{Used to check that output data frame has valid
 names. Must be one of the following options:
 \itemize{
-\item "minimal": no name repair or checks, beyond basic existence,
-\item "unique": make sure names are unique and not empty,
-\item "check_unique": (the default), no name repair, but check they are unique,
-\item "universal": make the names unique and syntactic
+\item \verb{"minimal}": no name repair or checks, beyond basic existence,
+\item \verb{"unique}": make sure names are unique and not empty,
+\item \verb{"check_unique}": (the default), no name repair, but check they are unique,
+\item \verb{"universal}": make the names unique and syntactic
 \item a function: apply custom name repair.
 \item \link{tidyr_legacy}: use the name repair from tidyr 0.8.
 \item a formula: a purrr-style anonymous function (see \code{\link[rlang:as_function]{rlang::as_function()}})
@@ -43,6 +53,11 @@ names. Must be one of the following options:
 
 See \code{\link[vctrs:vec_as_names]{vctrs::vec_as_names()}} for more details on these terms and the
 strategies used to enforce them.}
+
+\item{error_call, .error_call}{The execution environment of a currently
+running function, e.g. \code{caller_env()}. The function will be
+mentioned in error messages as the source of the error. See the
+\code{call} argument of \code{\link[rlang:abort]{abort()}} for more information.}
 }
 \description{
 Packing and unpacking preserve the length of a data frame, changing its
@@ -57,7 +72,7 @@ and they are mostly a curiosity, but seem worth exploring further because
 they mimic the nested column headers that are so popular in Excel.
 }
 \examples{
-# Packing =============================================================
+# Packing -------------------------------------------------------------------
 # It's not currently clear why you would ever want to pack columns
 # since few functions work with this sort of data.
 df <- tibble(x1 = 1:3, x2 = 4:6, x3 = 7:9, y = 1:3)
@@ -75,7 +90,7 @@ iris \%>\%
     .names_sep = "."
   )
 
-# Unpacking ===========================================================
+# Unpacking -----------------------------------------------------------------
 df <- tibble(
   x = 1:3,
   y = tibble(a = 1:3, b = 3:1),

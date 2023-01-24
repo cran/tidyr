@@ -16,6 +16,17 @@
 #' @param data A data frame to pivot.
 #' @param cols <[`tidy-select`][tidyr_tidy_select]> Columns to pivot into
 #'   longer format.
+#' @param cols_vary When pivoting `cols` into longer format, how should the
+#'   output rows be arranged relative to their original row number?
+#'
+#'   * `"fastest"`, the default, keeps individual rows from `cols` close
+#'     together in the output. This often produces intuitively ordered output
+#'     when you have at least one key column from `data` that is not involved in
+#'     the pivoting process.
+#'
+#'   * `"slowest"` keeps individual columns from `cols` close together in the
+#'     output. This often produces intuitively ordered output when you utilize
+#'     all of the columns from `data` in the pivoting process.
 #' @param names_to A character vector specifying the new column or columns to
 #'   create from the information stored in the column names of `data` specified
 #'   by `cols`.
@@ -82,10 +93,6 @@
 #'   confirm that the created columns are the types that you expect. Note that
 #'   if you want to change (instead of confirm) the types of specific columns,
 #'   you should use `names_transform` or `values_transform` instead.
-#'
-#'   For backwards compatibility reasons, supplying `list()` is interpreted as
-#'   being identical to `NULL` rather than as using a list prototype on all
-#'   columns. Expect this to change in the future.
 #' @param ... Additional arguments passed on to methods.
 #' @export
 #' @examples
@@ -116,16 +123,21 @@
 #'   values_to = "count"
 #' )
 #'
-#' # Multiple observations per row
+#' # Multiple observations per row. Since all columns are used in the pivoting
+#' # process, we'll use `cols_vary` to keep values from the original columns
+#' # close together in the output.
 #' anscombe
 #' anscombe %>%
 #'   pivot_longer(
 #'     everything(),
+#'     cols_vary = "slowest",
 #'     names_to = c(".value", "set"),
 #'     names_pattern = "(.)(.)"
 #'   )
 pivot_longer <- function(data,
                          cols,
+                         ...,
+                         cols_vary = "fastest",
                          names_to = "name",
                          names_prefix = NULL,
                          names_sep = NULL,
@@ -136,17 +148,16 @@ pivot_longer <- function(data,
                          values_to = "value",
                          values_drop_na = FALSE,
                          values_ptypes = NULL,
-                         values_transform = NULL,
-                         ...
-                         ) {
-
-  ellipsis::check_dots_used()
+                         values_transform = NULL) {
+  check_dots_used()
   UseMethod("pivot_longer")
 }
 
 #' @export
 pivot_longer.data.frame <- function(data,
                                     cols,
+                                    ...,
+                                    cols_vary = "fastest",
                                     names_to = "name",
                                     names_prefix = NULL,
                                     names_sep = NULL,
@@ -157,36 +168,42 @@ pivot_longer.data.frame <- function(data,
                                     values_to = "value",
                                     values_drop_na = FALSE,
                                     values_ptypes = NULL,
-                                    values_transform = NULL,
-                                    ...
-                                    ) {
-  cols <- enquo(cols)
-  spec <- build_longer_spec(data, !!cols,
+                                    values_transform = NULL) {
+  spec <- build_longer_spec(
+    data = data,
+    cols = {{ cols }},
     names_to = names_to,
     values_to = values_to,
     names_prefix = names_prefix,
     names_sep = names_sep,
     names_pattern = names_pattern,
     names_ptypes = names_ptypes,
-    names_transform = names_transform
+    names_transform = names_transform,
+    error_call = current_env()
   )
 
-  pivot_longer_spec(data, spec,
+  pivot_longer_spec(
+    data = data,
+    spec = spec,
+    cols_vary = cols_vary,
     names_repair = names_repair,
     values_drop_na = values_drop_na,
     values_ptypes = values_ptypes,
-    values_transform = values_transform
+    values_transform = values_transform,
+    error_call = current_env()
   )
 }
 
 
 #' Pivot data from wide to long using a spec
 #'
-#' This is a low level interface to pivotting, inspired by the cdata package,
-#' that allows you to describe pivotting with a data frame.
+#' This is a low level interface to pivoting, inspired by the cdata package,
+#' that allows you to describe pivoting with a data frame.
 #'
 #' @keywords internal
 #' @export
+#' @inheritParams rlang::args_dots_empty
+#' @inheritParams rlang::args_error_context
 #' @inheritParams pivot_longer
 #' @param spec A specification data frame. This is useful for more complex
 #'  pivots because it gives you greater control on how metadata stored in the
@@ -197,7 +214,7 @@ pivot_longer.data.frame <- function(data,
 #'   long format of the dataset and contain values corresponding to columns
 #'   pivoted from the wide format.
 #'   The special `.seq` variable is used to disambiguate rows internally;
-#'   it is automatically removed after pivotting.
+#'   it is automatically removed after pivoting.
 #'
 #' @examples
 #' # See vignette("pivot") for examples and explanation
@@ -217,17 +234,27 @@ pivot_longer.data.frame <- function(data,
 #' relig_income %>% pivot_longer(
 #'   cols = !religion,
 #'   names_to = "income",
-#'   values_to = "count")
-#'
+#'   values_to = "count"
+#' )
 pivot_longer_spec <- function(data,
                               spec,
+                              ...,
+                              cols_vary = "fastest",
                               names_repair = "check_unique",
                               values_drop_na = FALSE,
                               values_ptypes = NULL,
-                              values_transform = NULL
-                              ) {
-  spec <- check_pivot_spec(spec)
+                              values_transform = NULL,
+                              error_call = current_env()) {
+  check_dots_empty0(...)
+
+  spec <- check_pivot_spec(spec, call = error_call)
   spec <- deduplicate_spec(spec, data)
+
+  cols_vary <- arg_match0(
+    arg = cols_vary,
+    values = c("fastest", "slowest"),
+    error_call = error_call
+  )
 
   # Quick hack to ensure that split() preserves order
   v_fct <- factor(spec$.value, levels = unique(spec$.value))
@@ -236,48 +263,78 @@ pivot_longer_spec <- function(data,
   value_keys <- split(spec[-(1:2)], v_fct)
   keys <- vec_unique(spec[-(1:2)])
 
-  if (identical(values_ptypes, list())) {
-    # TODO: Remove me after https://github.com/tidyverse/tidyr/issues/1296
-    values_ptypes <- NULL
-  }
-  values_ptypes <- check_list_of_ptypes(values_ptypes, value_names, "values_ptypes")
-  values_transform <- check_list_of_functions(values_transform, value_names, "values_transform")
+  values_ptypes <- check_list_of_ptypes(values_ptypes, value_names, call = error_call)
+  values_transform <- check_list_of_functions(values_transform, value_names, call = error_call)
 
   vals <- set_names(vec_init(list(), length(values)), value_names)
   for (value in value_names) {
     cols <- values[[value]]
     col_id <- vec_match(value_keys[[value]], keys)
 
-    val_cols <- vec_init(list(), nrow(keys))
+    n_val_cols <- nrow(keys)
+
+    val_cols <- vec_init(list(), n_val_cols)
     val_cols[col_id] <- unname(as.list(data[cols]))
     val_cols[-col_id] <- list(rep(NA, nrow(data)))
 
     if (has_name(values_transform, value)) {
-      val_cols <- lapply(val_cols, values_transform[[value]])
+      val_cols <- map(val_cols, values_transform[[value]])
     }
-    val_type <- vec_ptype_common(!!!set_names(val_cols[col_id], cols), .ptype = values_ptypes[[value]])
-    out <- vec_c(!!!val_cols, .ptype = val_type)
-    # Interleave into correct order
-    # TODO somehow `t(matrix(x))` is _faster_ than `matrix(x, byrow = TRUE)`
-    # if this gets fixed in R this should use `byrow = TRUE` again
-    n_vals <- nrow(data) * length(val_cols)
-    idx <- t(matrix(seq_len(n_vals), ncol = length(val_cols)))
-    vals[[value]] <- vec_slice(out, as.integer(idx))
+
+    # Name inputs that came from `data`, just for good error messages when
+    # taking the common type and casting
+    names <- vec_rep("", times = n_val_cols)
+    names[col_id] <- cols
+
+    names(val_cols) <- names
+    val_type <- vec_ptype_common(
+      !!!val_cols[col_id],
+      .ptype = values_ptypes[[value]],
+      .call = error_call
+    )
+    val_cols <- vec_cast_common(
+      !!!val_cols,
+      .to = val_type,
+      .call = error_call
+    )
+    val_cols <- unname(val_cols)
+
+    if (cols_vary == "slowest") {
+      vals[[value]] <- list_unchop(val_cols, ptype = val_type)
+    } else if (cols_vary == "fastest") {
+      vals[[value]] <- vec_interleave(!!!val_cols, .ptype = val_type)
+    } else {
+      cli::cli_abort("Unknown {.arg cols_vary} value.", .internal = TRUE)
+    }
   }
   vals <- as_tibble(vals)
 
-  # Join together df, spec, and val to produce final tibble
-  df_out <- drop_cols(as_tibble(data, .name_repair = "minimal"), spec$.name)
+  # Join together data, keys, and vals to produce final tibble
+  data_cols <- drop_cols(as_tibble(data, .name_repair = "minimal"), spec$.name)
+
+  times_keys <- vec_size(data_cols)
+  times_data_cols <- vec_size(keys)
+
+  if (cols_vary == "slowest") {
+    data_cols <- vec_rep(data_cols, times_data_cols)
+    keys <- vec_rep_each(keys, times_keys)
+  } else if (cols_vary == "fastest") {
+    data_cols <- vec_rep_each(data_cols, times_data_cols)
+    keys <- vec_rep(keys, times_keys)
+  } else {
+    cli::cli_abort("Unknown {.arg cols_vary} value.", .internal = TRUE)
+  }
 
   out <- wrap_error_names(vec_cbind(
-    vec_rep_each(df_out, vec_size(keys)),
-    vec_rep(keys, vec_size(data)),
+    data_cols,
+    keys,
     vals,
-    .name_repair = names_repair
+    .name_repair = names_repair,
+    .error_call = error_call
   ))
 
-  if (values_drop_na) {
-    out <- vec_slice(out, !vec_equal_na(vals))
+  if (values_drop_na && vec_any_missing(vals)) {
+    out <- vec_slice(out, !vec_detect_missing(vals))
   }
 
   out$.seq <- NULL
@@ -289,18 +346,30 @@ pivot_longer_spec <- function(data,
 #' @export
 build_longer_spec <- function(data,
                               cols,
+                              ...,
                               names_to = "name",
                               values_to = "value",
                               names_prefix = NULL,
                               names_sep = NULL,
                               names_pattern = NULL,
                               names_ptypes = NULL,
-                              names_transform = NULL) {
-  cols <- tidyselect::eval_select(enquo(cols), data[unique(names(data))])
+                              names_transform = NULL,
+                              error_call = current_env()) {
+  check_dots_empty0(...)
+  check_data_frame(data, call = error_call)
+  check_required(cols, call = error_call)
+  check_character(names_to, allow_null = TRUE, call = error_call)
+
+  cols <- tidyselect::eval_select(
+    expr = enquo(cols),
+    data = data[unique(names(data))],
+    allow_rename = FALSE,
+    error_call = error_call
+  )
   cols <- names(cols)
 
   if (length(cols) == 0) {
-    abort(glue::glue("`cols` must select at least one column."))
+    cli::cli_abort("{.arg cols} must select at least one column.", call = error_call)
   }
 
   if (is.null(names_prefix)) {
@@ -312,9 +381,6 @@ build_longer_spec <- function(data,
   if (is.null(names_to)) {
     names_to <- character(0L)
   }
-  if (!is.character(names_to)) {
-    abort("`names_to` must be a character vector or `NULL`.")
-  }
 
   n_names_to <- length(names_to)
   has_names_sep <- !is.null(names_sep)
@@ -324,40 +390,39 @@ build_longer_spec <- function(data,
     names <- tibble::new_tibble(x = list(), nrow = length(names))
   } else if (n_names_to == 1L) {
     if (has_names_sep) {
-      abort("`names_sep` can't be used with a length 1 `names_to`.")
+      cli::cli_abort(
+        "{.arg names_sep} can't be used with a length 1 {.arg names_to}.",
+        call = error_call
+      )
     }
     if (has_names_pattern) {
-      names <- str_extract(names, names_to, regex = names_pattern)[[1]]
+      names <- str_extract(names, names_to, regex = names_pattern, error_call = error_call)[[1]]
     }
 
     names <- tibble(!!names_to := names)
   } else {
     if (!xor(has_names_sep, has_names_pattern)) {
-      abort(glue::glue(
-        "If you supply multiple names in `names_to` you must also supply one",
-        " of `names_sep` or `names_pattern`."
-      ))
+      cli::cli_abort(paste0(
+        "If you supply multiple names in {.arg names_to} you must also supply one",
+        " of {.arg names_sep} or {.arg names_pattern}."
+      ), call = error_call)
     }
 
     if (has_names_sep) {
-      names <- str_separate(names, names_to, sep = names_sep)
+      names <- str_separate(names, names_to, sep = names_sep, error_call = error_call)
     } else {
-      names <- str_extract(names, names_to, regex = names_pattern)
+      names <- str_extract(names, names_to, regex = names_pattern, error_call = error_call)
     }
   }
 
   if (".value" %in% names_to) {
     values_to <- NULL
   } else {
-    vec_assert(values_to, ptype = character(), size = 1)
+    vec_assert(values_to, ptype = character(), size = 1, call = error_call)
   }
 
-  if (identical(names_ptypes, list())) {
-    # TODO: Remove me after https://github.com/tidyverse/tidyr/issues/1296
-    names_ptypes <- NULL
-  }
-  names_ptypes <- check_list_of_ptypes(names_ptypes, names(names), "names_ptypes")
-  names_transform <- check_list_of_functions(names_transform, names(names), "names_transform")
+  names_ptypes <- check_list_of_ptypes(names_ptypes, names(names), call = error_call)
+  names_transform <- check_list_of_functions(names_transform, names(names), call = error_call)
 
   # Optionally, transform cols
   for (col in names(names_transform)) {
@@ -368,7 +433,7 @@ build_longer_spec <- function(data,
   # Optionally, cast variables generated from columns
   for (col in names(names_ptypes)) {
     ptype <- names_ptypes[[col]]
-    names[[col]] <- vec_cast(names[[col]], ptype)
+    names[[col]] <- vec_cast(names[[col]], ptype, x_arg = col, call = error_call)
   }
 
   out <- tibble(.name = cols)
@@ -383,12 +448,12 @@ drop_cols <- function(df, cols) {
   } else if (is.integer(cols)) {
     df[-cols]
   } else {
-    abort("Invalid input")
+    cli::cli_abort("Invalid input", .internal = TRUE)
   }
 }
 
 # Ensure that there's a one-to-one match from spec to data by adding
-# a special .seq variable which is automatically removed after pivotting.
+# a special .seq variable which is automatically removed after pivoting.
 deduplicate_spec <- function(spec, df) {
 
   # Ensure each .name has a unique output identifier

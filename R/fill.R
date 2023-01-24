@@ -6,13 +6,19 @@
 #'
 #' Missing values are replaced in atomic vectors; `NULL`s are replaced in lists.
 #'
-#' @inheritParams gather
+#' @section Grouped data frames:
+#' With grouped data frames created by [dplyr::group_by()], `fill()` will be
+#' applied _within_ each group, meaning that it won't fill across group
+#' boundaries.
+#'
+#' @param data A data frame.
 #' @param ... <[`tidy-select`][tidyr_tidy_select]> Columns to fill.
 #' @param .direction Direction in which to fill missing values. Currently
 #'   either "down" (the default), "up", "downup" (i.e. first down and then up)
 #'   or "updown" (first up and then down).
 #' @export
 #' @examples
+#' # direction = "down" --------------------------------------------------------
 #' # Value (year) is recorded only when it changes
 #' sales <- tibble::tribble(
 #'   ~quarter, ~year, ~sales,
@@ -33,10 +39,10 @@
 #'   "Q3",      NA,    31768,
 #'   "Q4",      NA,    49094
 #' )
-#'
 #' # `fill()` defaults to replacing missing data from top to bottom
 #' sales %>% fill(year)
 #'
+#' # direction = "up" ----------------------------------------------------------
 #' # Value (pet_type) is missing above
 #' tidy_pets <- tibble::tribble(
 #'   ~rank, ~pet_type, ~breed,
@@ -58,6 +64,7 @@
 #' tidy_pets %>%
 #'   fill(pet_type, .direction = "up")
 #'
+#' # direction = "downup" ------------------------------------------------------
 #' # Value (n_squirrels) is missing above and below within a group
 #' squirrels <- tibble::tribble(
 #'   ~group,    ~name,     ~role,     ~n_squirrels,
@@ -84,13 +91,22 @@
 #'
 #' # Using `.direction = "updown"` accomplishes the same goal in this example
 fill <- function(data, ..., .direction = c("down", "up", "downup", "updown")) {
-  ellipsis::check_dots_unnamed()
+  check_dots_unnamed()
   UseMethod("fill")
 }
 
 #' @export
 fill.data.frame <- function(data, ..., .direction = c("down", "up", "downup", "updown")) {
-  vars <- tidyselect::eval_select(expr(c(...)), data)
-  .direction <- arg_match0(.direction, values = c("down", "up", "downup", "updown"), arg_nm = ".direction")
-  dplyr::mutate_at(data, dplyr::vars(any_of(vars)), ~ vec_fill_missing(.x, direction = .direction))
+  vars <- tidyselect::eval_select(expr(c(...)), data, allow_rename = FALSE)
+
+  .direction <- arg_match0(
+    arg = .direction,
+    values = c("down", "up", "downup", "updown"),
+  )
+
+  fn <- function(col) {
+    vec_fill_missing(col, direction = .direction)
+  }
+
+  dplyr::mutate_at(data, .vars = dplyr::vars(any_of(vars)), .funs = fn)
 }

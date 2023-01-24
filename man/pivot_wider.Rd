@@ -6,6 +6,7 @@
 \usage{
 pivot_wider(
   data,
+  ...,
   id_cols = NULL,
   id_expand = FALSE,
   names_from = name,
@@ -19,18 +20,23 @@ pivot_wider(
   values_from = value,
   values_fill = NULL,
   values_fn = NULL,
-  unused_fn = NULL,
-  ...
+  unused_fn = NULL
 )
 }
 \arguments{
 \item{data}{A data frame to pivot.}
 
+\item{...}{Additional arguments passed on to methods.}
+
 \item{id_cols}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> A set of columns that
-uniquely identifies each observation. Defaults to all columns in \code{data}
-except for the columns specified in \code{names_from} and \code{values_from}.
-Typically used when you have redundant variables, i.e. variables whose
-values are perfectly correlated with existing variables.}
+uniquely identify each observation. Typically used when you have
+redundant variables, i.e. variables whose values are perfectly correlated
+with existing variables.
+
+Defaults to all columns in \code{data} except for the columns specified through
+\code{names_from} and \code{values_from}. If a tidyselect expression is supplied, it
+will be evaluated on \code{data} after removing the columns specified through
+\code{names_from} and \code{values_from}.}
 
 \item{id_expand}{Should the values in the \code{id_cols} columns be expanded by
 \code{\link[=expand]{expand()}} before pivoting? This results in more rows, the output will
@@ -113,8 +119,6 @@ all unspecified columns will be considered \code{id_cols}.
 
 This is similar to grouping by the \code{id_cols} then summarizing the
 unused columns using \code{unused_fn}.}
-
-\item{...}{Additional arguments passed on to methods.}
 }
 \description{
 \code{pivot_wider()} "widens" data, increasing the number of columns and
@@ -188,10 +192,10 @@ warpbreaks \%>\%
   pivot_wider(
     names_from = wool,
     values_from = breaks,
-    values_fn = ~mean(.x, na.rm = TRUE)
+    values_fn = ~ mean(.x, na.rm = TRUE)
   )
 }
 \seealso{
 \code{\link[=pivot_wider_spec]{pivot_wider_spec()}} to pivot "by hand" with a data frame that
-defines a pivotting specification.
+defines a pivoting specification.
 }

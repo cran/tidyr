@@ -12,12 +12,8 @@
 #' See more details in `vignette("pivot")`.
 #'
 #' @param data A data frame.
-#' @param key,value Column names or positions. This is passed to
-#'   [tidyselect::vars_pull()].
-#'
-#'   These arguments are passed by expression and support
-#'   [quasiquotation][rlang::quasiquotation] (you can unquote column
-#'   names or column positions).
+#' @param key,value <[`tidy-select`][tidyr_tidy_select]> Columns to use
+#'   for `key` and `value`.
 #' @param fill If set, missing values will be replaced with this value. Note
 #'   that there are two types of missingness in the input: explicit missing
 #'   values (i.e. `NA`), and implicit missings, rows that simply aren't
@@ -35,9 +31,8 @@
 #'   by `"<key_name><sep><key_value>"`.
 #' @export
 #' @examples
-#' library(dplyr)
-#' stocks <- data.frame(
-#'   time = as.Date('2009-01-01') + 0:9,
+#' stocks <- tibble(
+#'   time = as.Date("2009-01-01") + 0:9,
 #'   X = rnorm(10, 0, 1),
 #'   Y = rnorm(10, 0, 2),
 #'   Z = rnorm(10, 0, 4)
@@ -47,15 +42,19 @@
 #' stocksm %>% spread(time, price)
 #'
 #' # Spread and gather are complements
-#' df <- data.frame(x = c("a", "b"), y = c(3, 4), z = c(5, 6))
-#' df %>% spread(x, y) %>% gather("x", "y", a:b, na.rm = TRUE)
+#' df <- tibble(x = c("a", "b"), y = c(3, 4), z = c(5, 6))
+#' df %>%
+#'   spread(x, y) %>%
+#'   gather("x", "y", a:b, na.rm = TRUE)
 #'
 #' # Use 'convert = TRUE' to produce variables of mixed type
-#' df <- data.frame(row = rep(c(1, 51), each = 3),
-#'                  var = c("Sepal.Length", "Species", "Species_num"),
-#'                  value = c(5.1, "setosa", 1, 7.0, "versicolor", 2))
-#' df %>% spread(var, value) %>% str
-#' df %>% spread(var, value, convert = TRUE) %>% str
+#' df <- tibble(
+#'   row = rep(c(1, 51), each = 3),
+#'   var = rep(c("Sepal.Length", "Species", "Species_num"), 2),
+#'   value = c(5.1, "setosa", 1, 7.0, "versicolor", 2)
+#' )
+#' df %>% spread(var, value) %>% str()
+#' df %>% spread(var, value, convert = TRUE) %>% str()
 spread <- function(data, key, value, fill = NA, convert = FALSE,
                    drop = TRUE, sep = NULL) {
   UseMethod("spread")
@@ -63,8 +62,8 @@ spread <- function(data, key, value, fill = NA, convert = FALSE,
 #' @export
 spread.data.frame <- function(data, key, value, fill = NA, convert = FALSE,
                               drop = TRUE, sep = NULL) {
-  key_var <- tidyselect::vars_pull(names(data), !! enquo(key))
-  value_var <- tidyselect::vars_pull(names(data), !! enquo(value))
+  key_var <- tidyselect::vars_pull(names(data), !!enquo(key))
+  value_var <- tidyselect::vars_pull(names(data), !!enquo(value))
 
   col <- data[key_var]
   col_id <- id(col, drop = drop)
@@ -91,11 +90,10 @@ spread.data.frame <- function(data, key, value, fill = NA, convert = FALSE,
     shared <- sum(map_int(groups, length))
 
     str <- map_chr(groups, function(x) paste0(x, collapse = ", "))
-    rows <- paste0(vec_paste0("* ", str, "\n"), collapse = "")
-    abort(glue(
+    cli::cli_abort(c(
       "Each row of output must be identified by a unique combination of keys.",
-      "\nKeys are shared for {shared} rows:",
-      "\n{rows}"
+      i = "Keys are shared for {shared} rows",
+      set_names(str, "*")
     ))
   }
 
@@ -124,7 +122,7 @@ spread.data.frame <- function(data, key, value, fill = NA, convert = FALSE,
     ordered[] <- map(ordered, type.convert, as.is = TRUE)
   }
 
-  out <- append_df(row_labels, ordered)
+  out <- df_append(row_labels, ordered)
   reconstruct_tibble(data, out, c(key_var, value_var))
 }
 

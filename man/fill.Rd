@@ -23,7 +23,15 @@ and are only recorded when they change.
 \details{
 Missing values are replaced in atomic vectors; \code{NULL}s are replaced in lists.
 }
+\section{Grouped data frames}{
+
+With grouped data frames created by \code{\link[dplyr:group_by]{dplyr::group_by()}}, \code{fill()} will be
+applied \emph{within} each group, meaning that it won't fill across group
+boundaries.
+}
+
 \examples{
+# direction = "down" --------------------------------------------------------
 # Value (year) is recorded only when it changes
 sales <- tibble::tribble(
   ~quarter, ~year, ~sales,
@@ -44,10 +52,10 @@ sales <- tibble::tribble(
   "Q3",      NA,    31768,
   "Q4",      NA,    49094
 )
-
 # `fill()` defaults to replacing missing data from top to bottom
 sales \%>\% fill(year)
 
+# direction = "up" ----------------------------------------------------------
 # Value (pet_type) is missing above
 tidy_pets <- tibble::tribble(
   ~rank, ~pet_type, ~breed,
@@ -69,6 +77,7 @@ tidy_pets <- tibble::tribble(
 tidy_pets \%>\%
   fill(pet_type, .direction = "up")
 
+# direction = "downup" ------------------------------------------------------
 # Value (n_squirrels) is missing above and below within a group
 squirrels <- tibble::tribble(
   ~group,    ~name,     ~role,     ~n_squirrels,

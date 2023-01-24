@@ -8,16 +8,19 @@
 pivot_wider_spec(
   data,
   spec,
+  ...,
   names_repair = "check_unique",
   id_cols = NULL,
   id_expand = FALSE,
   values_fill = NULL,
   values_fn = NULL,
-  unused_fn = NULL
+  unused_fn = NULL,
+  error_call = current_env()
 )
 
 build_wider_spec(
   data,
+  ...,
   names_from = name,
   values_from = value,
   names_prefix = "",
@@ -25,7 +28,8 @@ build_wider_spec(
   names_glue = NULL,
   names_sort = FALSE,
   names_vary = "fastest",
-  names_expand = FALSE
+  names_expand = FALSE,
+  error_call = current_env()
 )
 }
 \arguments{
@@ -40,7 +44,9 @@ Additional columns in \code{spec} should be named to match columns in the
 long format of the dataset and contain values corresponding to columns
 pivoted from the wide format.
 The special \code{.seq} variable is used to disambiguate rows internally;
-it is automatically removed after pivotting.}
+it is automatically removed after pivoting.}
+
+\item{...}{These dots are for future extensions and must be empty.}
 
 \item{names_repair}{What happens if the output has invalid column names?
 The default, \code{"check_unique"} is to error if the columns are duplicated.
@@ -91,6 +97,11 @@ all unspecified columns will be considered \code{id_cols}.
 This is similar to grouping by the \code{id_cols} then summarizing the
 unused columns using \code{unused_fn}.}
 
+\item{error_call}{The execution environment of a currently
+running function, e.g. \code{caller_env()}. The function will be
+mentioned in error messages as the source of the error. See the
+\code{call} argument of \code{\link[rlang:abort]{abort()}} for more information.}
+
 \item{names_from, values_from}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> A pair of
 arguments describing which column (or columns) to get the name of the
 output column (\code{names_from}), and which column (or columns) to get the
@@ -132,8 +143,8 @@ represented in the data will become explicit. Additionally, the column
 names will be sorted, identical to what \code{names_sort} would produce.}
 }
 \description{
-This is a low level interface to pivotting, inspired by the cdata package,
-that allows you to describe pivotting with a data frame.
+This is a low level interface to pivoting, inspired by the cdata package,
+that allows you to describe pivoting with a data frame.
 }
 \examples{
 # See vignette("pivot") for examples and explanation
