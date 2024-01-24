@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# tidyr <a href='https://tidyr.tidyverse.org'><img src='man/figures/logo.png' align="right" height="139" /></a>
+# tidyr <a href="https://tidyr.tidyverse.org"><img src="man/figures/logo.png" align="right" height="138" alt="tidyr website" /></a>
 
 <!-- badges: start -->
 
@@ -17,9 +17,9 @@ coverage](https://codecov.io/gh/tidyverse/tidyr/branch/main/graph/badge.svg)](ht
 The goal of tidyr is to help you create **tidy data**. Tidy data is data
 where:
 
-1.  Every column is variable.
-2.  Every row is an observation.
-3.  Every cell is a single value.
+1.  Each variable is a column; each column is a variable.
+2.  Each observation is a row; each row is an observation.
+3.  Each value is a cell; each cell is a single value.
 
 Tidy data describes a standard way of storing data that is used wherever
 possible throughout the [tidyverse](https://www.tidyverse.org/). If you
@@ -37,8 +37,8 @@ install.packages("tidyverse")
 install.packages("tidyr")
 
 # Or the development version from GitHub:
-# install.packages("devtools")
-devtools::install_github("tidyverse/tidyr")
+# install.packages("pak")
+pak::pak("tidyverse/tidyr")
 ```
 
 ## Cheatsheet
@@ -67,10 +67,11 @@ tidyr functions fall into five main categories:
   opposite. See `nest()`, `unnest()`, and `vignette("nest")` for more
   details.
 
-- Splitting and combining character columns. Use `separate()` and
-  `extract()` to pull a single character column into multiple columns;
-  use `unite()` to combine multiple columns into a single character
-  column.
+- Splitting and combining character columns. Use
+  `separate_wider_delim()`, `separate_wider_position()`, and
+  `separate_wider_regex()` to pull a single character column into
+  multiple columns; use `unite()` to combine multiple columns into a
+  single character column.
 
 - Make implicit missing values explicit with `complete()`; make explicit
   missing values implicit with `drop_na()`; replace missing values with

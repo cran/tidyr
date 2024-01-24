@@ -73,7 +73,7 @@
       ! Expected 3 characters in each element of `x`.
       ! 1 value was too short.
       i Use `too_few = "debug"` to diagnose the problem.
-      i Use `too_few = "start"` to silence this message.
+      i Use `too_few = "align_start"` to silence this message.
       ! 1 value was too long.
       i Use `too_many = "debug"` to diagnose the problem.
       i Use `too_many = "drop"` to silence this message.
@@ -97,8 +97,8 @@
     Code
       df %>% separate_wider_position(x)
     Condition
-      Error in `is_integerish()`:
-      ! argument "widths" is missing, with no default
+      Error in `separate_wider_position()`:
+      ! `widths` is absent but must be supplied.
     Code
       df %>% separate_wider_position(x, widths = 1.5)
     Condition
@@ -124,7 +124,7 @@
       ! Expected each value of `x` to match the pattern, the whole pattern, and nothing but the pattern.
       ! 1 value has problem.
       i Use `too_few = "debug"` to diagnose the problem.
-      i Use `too_few = "start"` to silence this message.
+      i Use `too_few = "align_start"` to silence this message.
 
 # separate_wider_regex() can diagnose errors
 
