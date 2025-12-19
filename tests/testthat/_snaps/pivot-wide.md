@@ -1,9 +1,16 @@
+# error if input is not a data.frame
+
+    Code
+      pivot_wider_spec(list(), spec)
+    Condition
+      Error in `pivot_wider_spec()`:
+      ! `data` must be a data frame, not an empty list.
+
 # error when overwriting existing column
 
     Code
-      (expect_error(pivot_wider(df, names_from = key, values_from = val)))
-    Output
-      <error/vctrs_error_names_must_be_unique>
+      pivot_wider(df, names_from = key, values_from = val)
+    Condition
       Error in `pivot_wider()`:
       ! Names must be unique.
       x These names are duplicated:
@@ -22,49 +29,42 @@
 # `names_from` must be supplied if `name` isn't in `data` (#1240)
 
     Code
-      (expect_error(pivot_wider(df, values_from = val)))
-    Output
-      <error/vctrs_error_subscript_oob>
+      pivot_wider(df, values_from = val)
+    Condition
       Error in `pivot_wider()`:
-      ! Can't subset columns that don't exist.
+      ! Can't select columns that don't exist.
       x Column `name` doesn't exist.
 
 # `values_from` must be supplied if `value` isn't in `data` (#1240)
 
     Code
-      (expect_error(pivot_wider(df, names_from = key)))
-    Output
-      <error/vctrs_error_subscript_oob>
+      pivot_wider(df, names_from = key)
+    Condition
       Error in `pivot_wider()`:
-      ! Can't subset columns that don't exist.
+      ! Can't select columns that don't exist.
       x Column `value` doesn't exist.
 
 # `names_from` must identify at least 1 column (#1240)
 
     Code
-      (expect_error(pivot_wider(df, names_from = starts_with("foo"), values_from = val))
-      )
-    Output
-      <error/rlang_error>
+      pivot_wider(df, names_from = starts_with("foo"), values_from = val)
+    Condition
       Error in `pivot_wider()`:
       ! Must select at least one item.
 
 # `values_from` must identify at least 1 column (#1240)
 
     Code
-      (expect_error(pivot_wider(df, names_from = key, values_from = starts_with("foo")))
-      )
-    Output
-      <error/rlang_error>
+      pivot_wider(df, names_from = key, values_from = starts_with("foo"))
+    Condition
       Error in `pivot_wider()`:
       ! Must select at least one item.
 
 # `values_fn` emits an informative error when it doesn't result in unique values (#1238)
 
     Code
-      (expect_error(pivot_wider(df, values_fn = list(value = ~.x))))
-    Output
-      <error/rlang_error>
+      pivot_wider(df, values_fn = list(value = ~.x))
+    Condition
       Error in `pivot_wider()`:
       ! Applying `values_fn` to `value` must result in a single summary value per key.
       i Applying `values_fn` resulted in a vector of length 2.
@@ -72,18 +72,19 @@
 # `build_wider_spec()` requires empty dots
 
     Code
-      (expect_error(build_wider_spec(df, 1)))
-    Output
-      <error/rlib_error_dots_nonempty>
+      build_wider_spec(df, 1)
+    Condition
       Error in `build_wider_spec()`:
       ! `...` must be empty.
       x Problematic argument:
       * ..1 = 1
       i Did you forget to name an argument?
+
+---
+
     Code
-      (expect_error(build_wider_spec(df, name_prefix = "")))
-    Output
-      <error/rlib_error_dots_nonempty>
+      build_wider_spec(df, name_prefix = "")
+    Condition
       Error in `build_wider_spec()`:
       ! `...` must be empty.
       x Problematic argument:
@@ -92,68 +93,111 @@
 # `pivot_wider_spec()` requires empty dots
 
     Code
-      (expect_error(pivot_wider_spec(df, spec, 1)))
-    Output
-      <error/rlib_error_dots_nonempty>
+      pivot_wider_spec(df, spec, 1)
+    Condition
       Error in `pivot_wider_spec()`:
       ! `...` must be empty.
       x Problematic argument:
       * ..1 = 1
       i Did you forget to name an argument?
+
+---
+
     Code
-      (expect_error(pivot_wider_spec(df, spec, name_repair = "check_unique")))
-    Output
-      <error/rlib_error_dots_nonempty>
+      pivot_wider_spec(df, spec, name_repair = "check_unique")
+    Condition
       Error in `pivot_wider_spec()`:
       ! `...` must be empty.
       x Problematic argument:
       * name_repair = "check_unique"
 
+# doesn't crash when `id_cols` selects column removed by `names_from` (#1609)
+
+    Code
+      pivot_wider(df, id_cols = x, values_from = y, names_from = x)
+    Condition
+      Error in `pivot_wider()`:
+      ! Can't select columns past the end.
+      i Locations 1, 100, 200, and 300 don't exist.
+      i There are only 0 columns.
+
+# doesn't crash when `id_cols` selects non-existent column (#1482)
+
+    Code
+      pivot_wider(df, id_cols = c("non", "existent"), names_from = name, values_from = value)
+    Condition
+      Error in `pivot_wider()`:
+      ! Can't select columns that don't exist.
+      x Column `non` doesn't exist.
+
+---
+
+    Code
+      pivot_wider(df2, id_cols = all_of(c("a", "b", "c")), names_from = y,
+      values_from = z)
+    Condition
+      Error in `pivot_wider()`:
+      i In argument: `all_of(c("a", "b", "c"))`.
+      Caused by error in `all_of()`:
+      ! Can't subset elements that don't exist.
+      x Elements `a`, `b`, and `c` don't exist.
+
+---
+
+    Code
+      pivot_wider(df2, id_cols = 1:2, names_from = y, values_from = z)
+    Condition
+      Error in `pivot_wider()`:
+      ! Can't select columns past the end.
+      i Locations 1 and 2 don't exist.
+      i There are only 0 columns.
+
 # `names_vary` is validated
 
     Code
-      (expect_error(build_wider_spec(df, names_vary = 1)))
-    Output
-      <error/rlang_error>
+      build_wider_spec(df, names_vary = 1)
+    Condition
       Error in `build_wider_spec()`:
       ! `names_vary` must be a string or character vector.
+
+---
+
     Code
-      (expect_error(build_wider_spec(df, names_vary = "x")))
-    Output
-      <error/rlang_error>
+      build_wider_spec(df, names_vary = "x")
+    Condition
       Error in `build_wider_spec()`:
       ! `names_vary` must be one of "fastest" or "slowest", not "x".
 
 # `names_expand` is validated
 
     Code
-      (expect_error(build_wider_spec(df, names_expand = 1)))
-    Output
-      <error/rlang_error>
+      build_wider_spec(df, names_expand = 1)
+    Condition
       Error in `build_wider_spec()`:
       ! `names_expand` must be `TRUE` or `FALSE`, not the number 1.
+
+---
+
     Code
-      (expect_error(build_wider_spec(df, names_expand = "x")))
-    Output
-      <error/rlang_error>
+      build_wider_spec(df, names_expand = "x")
+    Condition
       Error in `build_wider_spec()`:
       ! `names_expand` must be `TRUE` or `FALSE`, not the string "x".
 
 # `id_cols` can't select columns from `names_from` or `values_from` (#1318)
 
     Code
-      (expect_error(pivot_wider(df, id_cols = name, names_from = name, values_from = value))
-      )
-    Output
-      <error/rlang_error>
+      pivot_wider(df, id_cols = name, names_from = name, values_from = value)
+    Condition
       Error in `pivot_wider()`:
       ! `id_cols` can't select a column already selected by `names_from`.
       i Column `name` has already been selected.
+
+---
+
     Code
-      (expect_error(pivot_wider(df, id_cols = value, names_from = name, values_from = value))
-      )
-    Output
-      <error/rlang_error>
+      pivot_wider(df, id_cols = value, names_from = name, values_from = value)
+    Condition
       Error in `pivot_wider()`:
       ! `id_cols` can't select a column already selected by `values_from`.
       i Column `value` has already been selected.
@@ -161,11 +205,10 @@
 # `id_cols` returns a tidyselect error if a column selection is OOB (#1318)
 
     Code
-      (expect_error(pivot_wider(df, id_cols = foo)))
-    Output
-      <error/vctrs_error_subscript_oob>
+      pivot_wider(df, id_cols = foo)
+    Condition
       Error in `pivot_wider()`:
-      ! Can't subset columns that don't exist.
+      ! Can't select columns that don't exist.
       x Column `foo` doesn't exist.
 
 # named `id_cols` gives clear error (#1104)
@@ -179,15 +222,16 @@
 # `id_expand` is validated
 
     Code
-      (expect_error(pivot_wider(df, id_expand = 1)))
-    Output
-      <error/rlang_error>
+      pivot_wider(df, id_expand = 1)
+    Condition
       Error in `pivot_wider()`:
       ! `id_expand` must be `TRUE` or `FALSE`, not the number 1.
+
+---
+
     Code
-      (expect_error(pivot_wider(df, id_expand = "x")))
-    Output
-      <error/rlang_error>
+      pivot_wider(df, id_expand = "x")
+    Condition
       Error in `pivot_wider()`:
       ! `id_expand` must be `TRUE` or `FALSE`, not the string "x".
 
@@ -260,18 +304,16 @@
 # values_fn is validated
 
     Code
-      (expect_error(pivot_wider(df, values_fn = 1)))
-    Output
-      <error/rlang_error>
+      pivot_wider(df, values_fn = 1)
+    Condition
       Error in `pivot_wider()`:
       ! `values_fn` must be `NULL`, a function, or a named list of functions.
 
 # `unused_fn` must result in single summary values
 
     Code
-      (expect_error(pivot_wider(df, id_cols = id, unused_fn = identity)))
-    Output
-      <error/rlang_error>
+      pivot_wider(df, id_cols = id, unused_fn = identity)
+    Condition
       Error in `pivot_wider()`:
       ! Applying `unused_fn` to `unused` must result in a single summary value per key.
       i Applying `unused_fn` resulted in a vector of length 2.
@@ -279,18 +321,16 @@
 # `values_fill` is validated
 
     Code
-      (expect_error(pivot_wider(df, values_fill = 1:2)))
-    Output
-      <error/rlang_error>
+      pivot_wider(df, values_fill = 1:2)
+    Condition
       Error in `pivot_wider()`:
       ! `values_fill` must be `NULL`, a scalar, or a named list, not an integer vector.
 
 # `unused_fn` is validated
 
     Code
-      (expect_error(pivot_wider(df, id_cols = id, unused_fn = 1)))
-    Output
-      <error/rlang_error>
+      pivot_wider(df, id_cols = id, unused_fn = 1)
+    Condition
       Error in `pivot_wider()`:
       ! `unused_fn` must be `NULL`, a function, or a named list of functions.
 

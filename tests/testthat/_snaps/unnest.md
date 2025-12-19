@@ -1,37 +1,33 @@
 # bad inputs generate errors
 
     Code
-      (expect_error(unnest(df, y)))
-    Output
-      <error/vctrs_error_scalar_type>
+      unnest(df, y)
+    Condition
       Error in `list_sizes()`:
       ! `x[[1]]` must be a vector, not a function.
 
 # multiple columns must be same length
 
     Code
-      (expect_error(unnest(df, c(x, y))))
-    Output
-      <error/rlang_error>
+      unnest(df, c(x, y))
+    Condition
       Error in `unnest()`:
       ! In row 1, can't recycle input of size 2 to size 3.
 
 ---
 
     Code
-      (expect_error(unnest(df, c(x, y))))
-    Output
-      <error/rlang_error>
+      unnest(df, c(x, y))
+    Condition
       Error in `unnest()`:
       ! In row 1, can't recycle input of size 2 to size 3.
 
 # unnesting column of mixed vector / data frame input is an error
 
     Code
-      (expect_error(unnest(df, x)))
-    Output
-      <error/vctrs_error_ptype2>
-      Error in `list_unchop()`:
+      unnest(df, x)
+    Condition
+      Error in `unnest()`:
       ! Can't combine `x[[1]]` <double> and `x[[2]]` <tbl_df>.
 
 # unnest() advises on outer / inner name duplication
@@ -73,7 +69,7 @@
     Condition
       Warning:
       `unnest()` has a new interface. See `?unnest` for details.
-      i Try `df %>% unnest(c(x, y))`, with `mutate()` if needed.
+      i Try `df |> unnest(c(x, y))`, with `mutate()` if needed.
     Output
       # A tibble: 2 x 2
             x y    
@@ -99,7 +95,7 @@
 # sep combines column names
 
     Code
-      out <- df %>% unnest(c(x, y), .sep = "_")
+      out <- unnest(df, c(x, y), .sep = "_")
     Condition
       Warning:
       The `.sep` argument of `unnest()` is deprecated as of tidyr 1.0.0.
@@ -108,16 +104,16 @@
 # unnest has mutate semantics
 
     Code
-      out <- df %>% unnest(z = map(y, `+`, 1))
+      out <- unnest(df, z = map(y, `+`, 1))
     Condition
       Warning:
       `unnest()` has a new interface. See `?unnest` for details.
-      i Try `df %>% unnest(c(z))`, with `mutate()` if needed.
+      i Try `df |> unnest(c(z))`, with `mutate()` if needed.
 
 # .drop and .preserve are deprecated
 
     Code
-      df %>% unnest(x, .preserve = y)
+      unnest(df, x, .preserve = y)
     Condition
       Warning:
       The `.preserve` argument of `unnest()` is deprecated as of tidyr 1.0.0.
@@ -132,7 +128,7 @@
 ---
 
     Code
-      df %>% unnest(x, .drop = FALSE)
+      unnest(df, x, .drop = FALSE)
     Condition
       Warning:
       The `.drop` argument of `unnest()` is deprecated as of tidyr 1.0.0.

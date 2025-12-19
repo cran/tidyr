@@ -4,12 +4,18 @@
 \alias{fill}
 \title{Fill in missing values with previous or next value}
 \usage{
-fill(data, ..., .direction = c("down", "up", "downup", "updown"))
+fill(data, ..., .by = NULL, .direction = c("down", "up", "downup", "updown"))
 }
 \arguments{
 \item{data}{A data frame.}
 
 \item{...}{<\code{\link[=tidyr_tidy_select]{tidy-select}}> Columns to fill.}
+
+\item{.by}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Optionally, a selection of columns to
+group by for just this operation, functioning as an alternative to \code{\link[dplyr:group_by]{group_by()}}. For
+details and examples, see \link[dplyr:dplyr_by]{?dplyr_by}.}
 
 \item{.direction}{Direction in which to fill missing values. Currently
 either "down" (the default), "up", "downup" (i.e. first down and then up)
@@ -27,7 +33,8 @@ Missing values are replaced in atomic vectors; \code{NULL}s are replaced in list
 
 With grouped data frames created by \code{\link[dplyr:group_by]{dplyr::group_by()}}, \code{fill()} will be
 applied \emph{within} each group, meaning that it won't fill across group
-boundaries.
+boundaries. This can also be accomplished using the \code{.by} argument to
+\code{fill()}, which creates a temporary grouping for just this operation.
 }
 
 \examples{
@@ -53,7 +60,7 @@ sales <- tibble::tribble(
   "Q4",      NA,    49094
 )
 # `fill()` defaults to replacing missing data from top to bottom
-sales \%>\% fill(year)
+sales |> fill(year)
 
 # direction = "up" ----------------------------------------------------------
 # Value (pet_type) is missing above
@@ -74,7 +81,7 @@ tidy_pets <- tibble::tribble(
 )
 
 # For values that are missing above you can use `.direction = "up"`
-tidy_pets \%>\%
+tidy_pets |>
   fill(pet_type, .direction = "up")
 
 # direction = "downup" ------------------------------------------------------
@@ -95,12 +102,16 @@ squirrels <- tibble::tribble(
   3, "Danielle",    "Observer",   NA
 )
 
-# The values are inconsistently missing by position within the group
-# Use .direction = "downup" to fill missing values in both directions
-squirrels \%>\%
-  dplyr::group_by(group) \%>\%
-  fill(n_squirrels, .direction = "downup") \%>\%
-  dplyr::ungroup()
+# The values are inconsistently missing by position within the `group`.
+# Use `.direction = "downup"` to fill missing values in both directions
+# and `.by = group` to apply the fill per group.
+squirrels |>
+  fill(n_squirrels, .direction = "downup", .by = group)
 
-# Using `.direction = "updown"` accomplishes the same goal in this example
+# If you want, you can also supply a data frame grouped with `group_by()`,
+# but don't forget to `ungroup()`!
+squirrels |>
+  dplyr::group_by(group) |>
+  fill(n_squirrels, .direction = "downup") |>
+  dplyr::ungroup()
 }

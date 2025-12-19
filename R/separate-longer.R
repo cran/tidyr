@@ -17,17 +17,17 @@
 #'   rows.
 #' @examples
 #' df <- tibble(id = 1:4, x = c("x", "x y", "x y z", NA))
-#' df %>% separate_longer_delim(x, delim = " ")
+#' df |> separate_longer_delim(x, delim = " ")
 #'
 #' # You can separate multiple columns at once if they have the same structure
 #' df <- tibble(id = 1:3, x = c("x", "x y", "x y z"), y = c("a", "a b", "a b c"))
-#' df %>% separate_longer_delim(c(x, y), delim = " ")
+#' df |> separate_longer_delim(c(x, y), delim = " ")
 #'
 #' # Or instead split by a fixed length
 #' df <- tibble(id = 1:3, x = c("ab", "def", ""))
-#' df %>% separate_longer_position(x, 1)
-#' df %>% separate_longer_position(x, 2)
-#' df %>% separate_longer_position(x, 2, keep_empty = TRUE)
+#' df |> separate_longer_position(x, 1)
+#' df |> separate_longer_position(x, 2)
+#' df |> separate_longer_position(x, 2, keep_empty = TRUE)
 separate_longer_delim <- function(data, cols, delim, ...) {
   check_installed("stringr")
   check_data_frame(data)
@@ -50,11 +50,17 @@ separate_longer_delim <- function(data, cols, delim, ...) {
 #'   use `keep_empty = TRUE` to replace size-0 elements with a missing value.
 #' @rdname separate_longer_delim
 #' @export
-separate_longer_position <- function(data, cols, width, ..., keep_empty = FALSE) {
+separate_longer_position <- function(
+  data,
+  cols,
+  width,
+  ...,
+  keep_empty = FALSE
+) {
   check_installed("stringr")
   check_data_frame(data)
   check_required(cols)
-  check_number_whole(width, min = 1L)
+  check_number_whole(width, min = 1)
   check_dots_empty()
 
   map_unchop(
@@ -81,7 +87,14 @@ str_split_length <- function(x, width = 1) {
 
 # helpers -----------------------------------------------------------------
 
-map_unchop <- function(data, cols, fun, ..., .keep_empty = FALSE, .error_call = caller_env()) {
+map_unchop <- function(
+  data,
+  cols,
+  fun,
+  ...,
+  .keep_empty = FALSE,
+  .error_call = caller_env()
+) {
   cols <- tidyselect::eval_select(
     enquo(cols),
     data = data,

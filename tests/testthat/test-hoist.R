@@ -1,11 +1,10 @@
-
 test_that("hoist extracts named elements", {
   df <- tibble(x = list(list(1, b = "b")))
 
-  out <- df %>% hoist(x, a = 1, b = "b")
+  out <- df |> hoist(x, a = 1, b = "b")
   expect_equal(out, tibble(a = 1, b = "b"))
 
-  out <- df %>% hoist(x, a = 1, b = "b", .simplify = FALSE)
+  out <- df |> hoist(x, a = 1, b = "b", .simplify = FALSE)
   expect_identical(out, tibble(a = list(1), b = list("b")))
 })
 
@@ -16,34 +15,38 @@ test_that("can hoist named non-list elements at the deepest level", {
 })
 
 test_that("can check check/transform values", {
-  df <- tibble(x = list(
-    list(a = 1),
-    list(a = "a")
-  ))
+  df <- tibble(
+    x = list(
+      list(a = 1),
+      list(a = "a")
+    )
+  )
 
   expect_error(
-    df %>% hoist(x, a = "a", .ptype = list(a = character())),
+    df |> hoist(x, a = "a", .ptype = list(a = character())),
     class = "vctrs_error_incompatible_type"
   )
 
-  out <- df %>% hoist(x, a = "a", .transform = list(a = as.character))
+  out <- df |> hoist(x, a = "a", .transform = list(a = as.character))
   expect_equal(out, tibble(a = c("1", "a")))
 })
 
 test_that("nested lists generate a cast error if they can't be cast to the ptype", {
   df <- tibble(x = list(list(b = list(1))))
 
-  expect_snapshot((expect_error(
-    hoist(df, x, "b", .ptype = list(b = double()))
-  )))
+  expect_snapshot(
+    hoist(df, x, "b", .ptype = list(b = double())),
+    error = TRUE
+  )
 })
 
 test_that("non-vectors generate a cast error if a ptype is supplied", {
   df <- tibble(x = list(list(b = quote(a))))
 
-  expect_snapshot((expect_error(
-    hoist(df, x, "b", .ptype = list(b = integer()))
-  )))
+  expect_snapshot(
+    hoist(df, x, "b", .ptype = list(b = integer())),
+    error = TRUE
+  )
 })
 
 test_that("a ptype generates a list-of<ptype> if the col can't be simplified (#998)", {
@@ -55,32 +58,38 @@ test_that("a ptype generates a list-of<ptype> if the col can't be simplified (#9
 })
 
 test_that("doesn't simplify uneven lengths", {
-  df <- tibble(x = list(
-    list(a = 1),
-    list(a = 2:3)
-  ))
+  df <- tibble(
+    x = list(
+      list(a = 1),
+      list(a = 2:3)
+    )
+  )
 
-  out <- df %>% hoist(x, a = "a")
+  out <- df |> hoist(x, a = "a")
   expect_identical(out$a, list(1, 2:3))
 })
 
 test_that("doesn't simplify lists of lists", {
-  df <- tibble(x = list(
-    list(a = list(1)),
-    list(a = list(2))
-  ))
+  df <- tibble(
+    x = list(
+      list(a = list(1)),
+      list(a = list(2))
+    )
+  )
 
-  out <- df %>% hoist(x, a = "a")
+  out <- df |> hoist(x, a = "a")
   expect_identical(out$a, list(list(1), list(2)))
 })
 
 test_that("doesn't simplify non-vectors", {
-  df <- tibble(x = list(
-    list(a = quote(a)),
-    list(a = quote(b))
-  ))
+  df <- tibble(
+    x = list(
+      list(a = quote(a)),
+      list(a = quote(b))
+    )
+  )
 
-  out <- df %>% hoist(x, a = "a")
+  out <- df |> hoist(x, a = "a")
   expect_identical(out$a, list(quote(a), quote(b)))
 })
 
@@ -99,10 +108,14 @@ test_that("can hoist out scalars", {
 test_that("input validation catches problems", {
   df <- tibble(x = list(list(1, b = "b")), y = 1)
 
-  expect_snapshot({
-    (expect_error(df %>% hoist(y)))
-    (expect_error(df %>% hoist(x, 1)))
-    (expect_error(df %>% hoist(x, a = "a", a = "b")))
+  expect_snapshot(error = TRUE, {
+    df |> hoist(y)
+  })
+  expect_snapshot(error = TRUE, {
+    df |> hoist(x, 1)
+  })
+  expect_snapshot(error = TRUE, {
+    df |> hoist(x, a = "a", a = "b")
   })
 })
 
@@ -114,9 +127,10 @@ test_that("string pluckers are automatically named", {
 test_that("can't hoist() from a data frame column", {
   df <- tibble(a = tibble(x = 1))
 
-  expect_snapshot((expect_error(
-    hoist(df, a, xx = 1)
-  )))
+  expect_snapshot(
+    hoist(df, a, xx = 1),
+    error = TRUE
+  )
 })
 
 test_that("can hoist() without any pluckers", {
@@ -163,10 +177,20 @@ test_that("hoist() validates its inputs (#1224)", {
 
   expect_snapshot(error = TRUE, {
     hoist(1)
+  })
+  expect_snapshot(error = TRUE, {
     hoist(df)
+  })
+  expect_snapshot(error = TRUE, {
     hoist(df, a, .remove = 1)
+  })
+  expect_snapshot(error = TRUE, {
     hoist(df, a, .ptype = 1)
+  })
+  expect_snapshot(error = TRUE, {
     hoist(df, a, .transform = 1)
+  })
+  expect_snapshot(error = TRUE, {
     hoist(df, a, .simplify = 1)
   })
 })

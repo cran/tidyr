@@ -26,21 +26,20 @@
 #' separate_rows(df, y, z, convert = TRUE)
 #'
 #' # Now recommended
-#' df %>%
+#' df |>
 #'   separate_longer_delim(c(y, z), delim = ",")
-separate_rows <- function(data,
-                          ...,
-                          sep = "[^[:alnum:].]+",
-                          convert = FALSE) {
+separate_rows <- function(data, ..., sep = "[^[:alnum:].]+", convert = FALSE) {
   check_dots_unnamed()
   UseMethod("separate_rows")
 }
 
 #' @export
-separate_rows.data.frame <- function(data,
-                                     ...,
-                                     sep = "[^[:alnum:].]+",
-                                     convert = FALSE) {
+separate_rows.data.frame <- function(
+  data,
+  ...,
+  sep = "[^[:alnum:].]+",
+  convert = FALSE
+) {
   check_string(sep)
   check_bool(convert)
 

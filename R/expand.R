@@ -56,33 +56,33 @@
 #' )
 #'
 #' # All combinations, including factor levels that are not used
-#' fruits %>% expand(type)
-#' fruits %>% expand(size)
-#' fruits %>% expand(type, size)
-#' fruits %>% expand(type, size, year)
+#' fruits |> expand(type)
+#' fruits |> expand(size)
+#' fruits |> expand(type, size)
+#' fruits |> expand(type, size, year)
 #'
 #' # Only combinations that already appear in the data
-#' fruits %>% expand(nesting(type))
-#' fruits %>% expand(nesting(size))
-#' fruits %>% expand(nesting(type, size))
-#' fruits %>% expand(nesting(type, size, year))
+#' fruits |> expand(nesting(type))
+#' fruits |> expand(nesting(size))
+#' fruits |> expand(nesting(type, size))
+#' fruits |> expand(nesting(type, size, year))
 #'
 #' # Other uses ----------------------------------------------------------------
 #' # Use with `full_seq()` to fill in values of continuous variables
-#' fruits %>% expand(type, size, full_seq(year, 1))
-#' fruits %>% expand(type, size, 2010:2013)
+#' fruits |> expand(type, size, full_seq(year, 1))
+#' fruits |> expand(type, size, 2010:2013)
 #'
 #' # Use `anti_join()` to determine which observations are missing
-#' all <- fruits %>% expand(type, size, year)
+#' all <- fruits |> expand(type, size, year)
 #' all
-#' all %>% dplyr::anti_join(fruits)
+#' all |> dplyr::anti_join(fruits)
 #'
 #' # Use with `right_join()` to fill in missing rows (like `complete()`)
-#' fruits %>% dplyr::right_join(all)
+#' fruits |> dplyr::right_join(all)
 #'
 #' # Use with `group_by()` to expand within each group
-#' fruits %>%
-#'   dplyr::group_by(type) %>%
+#' fruits |>
+#'   dplyr::group_by(type) |>
 #'   expand(year, size)
 expand <- function(data, ..., .name_repair = "check_unique") {
   UseMethod("expand")
@@ -101,35 +101,22 @@ expand.data.frame <- function(data, ..., .name_repair = "check_unique") {
 
 #' @export
 expand.grouped_df <- function(data, ..., .name_repair = "check_unique") {
-
-  if (the$has_dplyr_1_1) {
-    reframe <- utils::getFromNamespace("reframe", ns = "dplyr")
-    pick <- utils::getFromNamespace("pick", ns = "dplyr")
-
-    out <- reframe(
-      data,
-      expand(
-        data = pick(everything()),
-        ...,
-        .name_repair = .name_repair
-      )
+  out <- dplyr::reframe(
+    data,
+    expand(
+      data = dplyr::pick(everything()),
+      ...,
+      .name_repair = .name_repair
     )
+  )
 
-    drop <- dplyr::group_by_drop_default(data)
-    dplyr::group_by(out, !!!dplyr::groups(data), .drop = drop)
-  } else {
-    dplyr::summarise(
-      data,
-      expand(
-        data = dplyr::cur_data(),
-        ...,
-        .name_repair = .name_repair
-      ),
-      .groups = "keep"
-    )
+  drop <- dplyr::group_by_drop_default(data)
 
-  }
-
+  dplyr::group_by(
+    out,
+    !!!dplyr::groups(data),
+    .drop = drop
+  )
 }
 
 # Nesting & crossing ------------------------------------------------------
@@ -175,30 +162,37 @@ nesting <- function(..., .name_repair = "check_unique") {
 #' `expand_grid()` is heavily motivated by [expand.grid()].
 #' Compared to `expand.grid()`, it:
 #'
-#' * Produces sorted output (by varying the first column the slowest, rather
-#'   than the fastest).
+#' * Produces sorted output by varying the first column the slowest by default.
 #' * Returns a tibble, not a data frame.
 #' * Never converts strings to factors.
 #' * Does not add any additional attributes.
 #' * Can expand any generalised vector, including data frames.
 #'
+#' @inheritParams vctrs::vec_expand_grid
+#'
 #' @param ... Name-value pairs. The name will become the column name in the
 #'   output.
-#' @inheritParams tibble::as_tibble
-#' @return A tibble with one column for each input in `...`. The output
-#'   will have one row for each combination of the inputs, i.e. the size
-#'   be equal to the product of the sizes of the inputs. This implies
-#'   that if any input has length 0, the output will have zero rows.
+#'
+#' @return A tibble with one column for each input in `...`. The output will
+#'   have one row for each combination of the inputs, i.e. the size will be
+#'   equal to the product of the sizes of the inputs. This implies that if any
+#'   input has length 0, the output will have zero rows. The ordering of the
+#'   output depends on the `.vary` argument.
+#'
 #' @export
 #' @examples
+#' # Default behavior varies the first column "slowest"
 #' expand_grid(x = 1:3, y = 1:2)
-#' expand_grid(l1 = letters, l2 = LETTERS)
+#'
+#' # Vary the first column "fastest", like `expand.grid()`
+#' expand_grid(x = 1:3, y = 1:2, .vary = "fastest")
 #'
 #' # Can also expand data frames
 #' expand_grid(df = tibble(x = 1:2, y = c(2, 1)), z = 1:3)
+#'
 #' # And matrices
 #' expand_grid(x1 = matrix(1:4, nrow = 2), x2 = matrix(5:8, nrow = 2))
-expand_grid <- function(..., .name_repair = "check_unique") {
+expand_grid <- function(..., .name_repair = "check_unique", .vary = "slowest") {
   out <- grid_dots(...)
 
   names <- names2(out)
@@ -215,6 +209,7 @@ expand_grid <- function(..., .name_repair = "check_unique") {
 
   out <- vec_expand_grid(
     !!!out,
+    .vary = .vary,
     .name_repair = "minimal",
     .error_call = current_env()
   )
@@ -228,7 +223,11 @@ expand_grid <- function(..., .name_repair = "check_unique") {
 
   # Flattens unnamed data frames after grid expansion
   out <- tidyr_new_list(out)
-  out <- df_list(!!!out, .name_repair = .name_repair, .error_call = current_env())
+  out <- df_list(
+    !!!out,
+    .name_repair = .name_repair,
+    .error_call = current_env()
+  )
   out <- tibble::new_tibble(out, nrow = size)
 
   out

@@ -1,10 +1,9 @@
-
 test_that("number of rows is preserved", {
   df <- tibble(
     x = 1:3,
     y = list(NULL, c(a = 1), c(a = 1, b = 2))
   )
-  out <- df %>% unnest_wider(y)
+  out <- df |> unnest_wider(y)
   expect_equal(nrow(out), 3)
 })
 
@@ -16,15 +15,13 @@ test_that("simplifies length-1 lists", {
       list(a = 3)
     )
   )
-  out <- df %>% unnest_wider(y)
+  out <- df |> unnest_wider(y)
   expect_equal(out$a, c(1, 3))
   expect_equal(out$b, c(2, NA))
   expect_equal(out$c, list(c(1, 2), NULL))
 
   # Works when casting too
-  out <- df %>% unnest_wider(y,
-    ptype = list(a = integer(), b = integer())
-  )
+  out <- df |> unnest_wider(y, ptype = list(a = integer(), b = integer()))
   expect_equal(out$a, c(1L, 3L))
   expect_equal(out$b, c(2L, NA))
   expect_equal(out$c, list(c(1, 2), NULL))
@@ -32,7 +29,7 @@ test_that("simplifies length-1 lists", {
 
 test_that("treats data frames like lists where we have type info about each element", {
   df <- tibble(x = 1:2, y = list(tibble(a = 1:2)))
-  out <- df %>% unnest_wider(y)
+  out <- df |> unnest_wider(y)
 
   expect_named(out, c("x", "a"))
   expect_equal(nrow(out), 2)
@@ -41,7 +38,7 @@ test_that("treats data frames like lists where we have type info about each elem
   expect_identical(attr(out$a, "ptype"), integer())
 
   df <- tibble(x = 1:2, y = list(list(a = 1:2)))
-  out <- df %>% unnest_wider(y)
+  out <- df |> unnest_wider(y)
 
   expect_named(out, c("x", "a"))
   expect_equal(nrow(out), 2)
@@ -53,9 +50,7 @@ test_that("treats data frames like lists where we have type info about each elem
 test_that("unnest_wider - bad inputs generate errors", {
   df <- tibble(x = 1, y = list(mean))
 
-  expect_snapshot((expect_error(
-    unnest_wider(df, y)
-  )))
+  expect_snapshot(unnest_wider(df, y), error = TRUE)
 })
 
 test_that("list of 0-length vectors yields no new columns", {
@@ -94,10 +89,10 @@ test_that("names_sep creates unique names", {
     x = list("a", c("a", "b", "c")),
     y = list(c(a = 1), c(b = 2, a = 1))
   )
-  expect_warning(out <- unnest_wider(df, x, names_sep = "_"), NA)
+  expect_no_warning(out <- unnest_wider(df, x, names_sep = "_"))
   expect_named(out, c("x_1", "x_2", "x_3", "y"))
 
-  expect_warning(out <- unnest_wider(df, y, names_sep = "_"), NA)
+  expect_no_warning(out <- unnest_wider(df, y, names_sep = "_"))
   expect_named(out, c("x", "y_a", "y_b"))
   expect_equal(out$y_a, c(1, 1))
 })
@@ -130,7 +125,10 @@ test_that("df-cols can be unnested (#1188)", {
 test_that("df-cols result in list-ofs when `simplify = FALSE`", {
   df <- tibble(a = 1:3, b = tibble(x = 1:3, y = 1:3))
   out <- unnest_wider(df, b, simplify = FALSE)
-  expect_identical(out, tibble(a = 1:3, x = list_of(1L, 2L, 3L), y = list_of(1L, 2L, 3L)))
+  expect_identical(
+    out,
+    tibble(a = 1:3, x = list_of(1L, 2L, 3L), y = list_of(1L, 2L, 3L))
+  )
 })
 
 test_that("unnesting mixed empty types retains the column (#1125)", {
@@ -139,11 +137,13 @@ test_that("unnesting mixed empty types retains the column (#1125)", {
 })
 
 test_that("can unnest mixed empty types with `strict = FALSE`", {
-  df <- tibble(col = list(
-    list(a = "x"),
-    list(a = list()),
-    list(a = integer())
-  ))
+  df <- tibble(
+    col = list(
+      list(a = "x"),
+      list(a = list()),
+      list(a = integer())
+    )
+  )
 
   expect_identical(
     unnest_wider(df, col)$a,
@@ -211,10 +211,12 @@ test_that("integer names are generated for partially named vectors (#1367)", {
   out <- unnest_wider(df, col, names_sep = "_")
   expect_named(out, c("col_x", "col_2", "col_z", "col_4"))
 
-  df <- tibble(col = list(
-    set_names(1:4, c("x", "", "z", "")),
-    set_names(5:8, c("", "", "z", ""))
-  ))
+  df <- tibble(
+    col = list(
+      set_names(1:4, c("x", "", "z", "")),
+      set_names(5:8, c("", "", "z", ""))
+    )
+  )
   out <- unnest_wider(df, col, names_sep = "_")
   expect_named(out, c("col_x", "col_2", "col_z", "col_4", "col_1"))
   expect_identical(out$col_x, c(1L, NA))
@@ -300,7 +302,10 @@ test_that("unnest_wider() works with foreign lists recognized by `vec_is_list()`
 
   # With empty types
   df <- tibble(x = new_foo(new_foo(a = 1, b = integer())))
-  expect_identical(unnest_wider(df, x, strict = TRUE), tibble(a = 1, b = NA_integer_))
+  expect_identical(
+    unnest_wider(df, x, strict = TRUE),
+    tibble(a = 1, b = NA_integer_)
+  )
 
   # With `NULL`s
   df <- tibble(x = new_foo(new_foo(a = 1, b = NULL)))
@@ -311,8 +316,14 @@ test_that("unnest_wider() validates its inputs", {
   df <- tibble(x = list(a = 1:2, b = 3:4))
   expect_snapshot(error = TRUE, {
     unnest_wider(1)
+  })
+  expect_snapshot(error = TRUE, {
     unnest_wider(df)
+  })
+  expect_snapshot(error = TRUE, {
     unnest_wider(df, x, names_sep = 1)
+  })
+  expect_snapshot(error = TRUE, {
     unnest_wider(df, x, strict = 1)
   })
 })

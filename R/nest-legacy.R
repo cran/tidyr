@@ -42,12 +42,12 @@
 #' @examples
 #' # Nest and unnest are inverses
 #' df <- tibble(x = c(1, 1, 2), y = 3:1)
-#' df %>% nest_legacy(y)
-#' df %>% nest_legacy(y) %>% unnest_legacy()
+#' df |> nest_legacy(y)
+#' df |> nest_legacy(y) |> unnest_legacy()
 #'
 #' # nesting -------------------------------------------------------------------
-#' as_tibble(iris) %>% nest_legacy(!Species)
-#' as_tibble(chickwts) %>% nest_legacy(weight)
+#' as_tibble(iris) |> nest_legacy(!Species)
+#' as_tibble(chickwts) |> nest_legacy(weight)
 #'
 #' # unnesting -----------------------------------------------------------------
 #' df <- tibble(
@@ -57,7 +57,7 @@
 #'     tibble(z = 3:4)
 #'   )
 #' )
-#' df %>% unnest_legacy(y)
+#' df |> unnest_legacy(y)
 #'
 #' # You can also unnest multiple columns simultaneously
 #' df <- tibble(
@@ -65,9 +65,9 @@
 #'   b = list(1:2, 3),
 #'   c = c(11, 22)
 #' )
-#' df %>% unnest_legacy(a, b)
+#' df |> unnest_legacy(a, b)
 #' # If you omit the column names, it'll unnest all list-cols
-#' df %>% unnest_legacy()
+#' df |> unnest_legacy()
 nest_legacy <- function(data, ..., .key = "data") {
   UseMethod("nest_legacy")
 }
@@ -118,15 +118,27 @@ nest_legacy.data.frame <- function(data, ..., .key = "data") {
   nest_legacy.tbl_df(data, ..., .key = !!.key)
 }
 
-
 #' @export
 #' @rdname nest_legacy
-unnest_legacy <- function(data, ..., .drop = NA, .id = NULL, .sep = NULL, .preserve = NULL) {
+unnest_legacy <- function(
+  data,
+  ...,
+  .drop = NA,
+  .id = NULL,
+  .sep = NULL,
+  .preserve = NULL
+) {
   UseMethod("unnest_legacy")
 }
 #' @export
-unnest_legacy.data.frame <- function(data, ..., .drop = NA, .id = NULL,
-                                     .sep = NULL, .preserve = NULL) {
+unnest_legacy.data.frame <- function(
+  data,
+  ...,
+  .drop = NA,
+  .id = NULL,
+  .sep = NULL,
+  .preserve = NULL
+) {
   preserve <- tidyselect::vars_select(names(data), !!enquo(.preserve))
   quos <- quos(...)
   if (is_empty(quos)) {
@@ -208,8 +220,11 @@ unnest_legacy.data.frame <- function(data, ..., .drop = NA, .id = NULL,
 }
 
 list_col_type <- function(x) {
-  is_data_frame <- is.data.frame(attr(x, "ptype", exact = TRUE)) || (is.list(x) && all(map_lgl(x, is.data.frame)))
-  is_atomic <- all(map_lgl(x, function(x) is_atomic(x) || (is_list(x) && !is.object(x))))
+  is_data_frame <- is.data.frame(attr(x, "ptype", exact = TRUE)) ||
+    (is.list(x) && all(map_lgl(x, is.data.frame)))
+  is_atomic <- all(map_lgl(x, function(x) {
+    is_atomic(x) || (is_list(x) && !is.object(x))
+  }))
 
   if (is_data_frame) {
     "dataframe"

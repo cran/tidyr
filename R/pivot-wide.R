@@ -98,15 +98,15 @@
 #' # See vignette("pivot") for examples and explanation
 #'
 #' fish_encounters
-#' fish_encounters %>%
+#' fish_encounters |>
 #'   pivot_wider(names_from = station, values_from = seen)
 #' # Fill in missing values
-#' fish_encounters %>%
+#' fish_encounters |>
 #'   pivot_wider(names_from = station, values_from = seen, values_fill = 0)
 #'
 #' # Generate column names from multiple variables
 #' us_rent_income
-#' us_rent_income %>%
+#' us_rent_income |>
 #'   pivot_wider(
 #'     names_from = variable,
 #'     values_from = c(estimate, moe)
@@ -114,7 +114,7 @@
 #'
 #' # You can control whether `names_from` values vary fastest or slowest
 #' # relative to the `values_from` column names using `names_vary`.
-#' us_rent_income %>%
+#' us_rent_income |>
 #'   pivot_wider(
 #'     names_from = variable,
 #'     values_from = c(estimate, moe),
@@ -123,13 +123,13 @@
 #'
 #' # When there are multiple `names_from` or `values_from`, you can use
 #' # use `names_sep` or `names_glue` to control the output variable names
-#' us_rent_income %>%
+#' us_rent_income |>
 #'   pivot_wider(
 #'     names_from = variable,
 #'     names_sep = ".",
 #'     values_from = c(estimate, moe)
 #'   )
-#' us_rent_income %>%
+#' us_rent_income |>
 #'   pivot_wider(
 #'     names_from = variable,
 #'     names_glue = "{variable}_{.value}",
@@ -139,7 +139,7 @@
 #' # Can perform aggregation with `values_fn`
 #' warpbreaks <- as_tibble(warpbreaks[c("wool", "tension", "breaks")])
 #' warpbreaks
-#' warpbreaks %>%
+#' warpbreaks |>
 #'   pivot_wider(
 #'     names_from = wool,
 #'     values_from = breaks,
@@ -149,49 +149,53 @@
 #' # Can pass an anonymous function to `values_fn` when you
 #' # need to supply additional arguments
 #' warpbreaks$breaks[1] <- NA
-#' warpbreaks %>%
+#' warpbreaks |>
 #'   pivot_wider(
 #'     names_from = wool,
 #'     values_from = breaks,
 #'     values_fn = ~ mean(.x, na.rm = TRUE)
 #'   )
-pivot_wider <- function(data,
-                        ...,
-                        id_cols = NULL,
-                        id_expand = FALSE,
-                        names_from = name,
-                        names_prefix = "",
-                        names_sep = "_",
-                        names_glue = NULL,
-                        names_sort = FALSE,
-                        names_vary = "fastest",
-                        names_expand = FALSE,
-                        names_repair = "check_unique",
-                        values_from = value,
-                        values_fill = NULL,
-                        values_fn = NULL,
-                        unused_fn = NULL) {
+pivot_wider <- function(
+  data,
+  ...,
+  id_cols = NULL,
+  id_expand = FALSE,
+  names_from = name,
+  names_prefix = "",
+  names_sep = "_",
+  names_glue = NULL,
+  names_sort = FALSE,
+  names_vary = "fastest",
+  names_expand = FALSE,
+  names_repair = "check_unique",
+  values_from = value,
+  values_fill = NULL,
+  values_fn = NULL,
+  unused_fn = NULL
+) {
   # TODO: Use `check_dots_used()` after removing the `id_cols` compat behavior
   UseMethod("pivot_wider")
 }
 
 #' @export
-pivot_wider.data.frame <- function(data,
-                                   ...,
-                                   id_cols = NULL,
-                                   id_expand = FALSE,
-                                   names_from = name,
-                                   names_prefix = "",
-                                   names_sep = "_",
-                                   names_glue = NULL,
-                                   names_sort = FALSE,
-                                   names_vary = "fastest",
-                                   names_expand = FALSE,
-                                   names_repair = "check_unique",
-                                   values_from = value,
-                                   values_fill = NULL,
-                                   values_fn = NULL,
-                                   unused_fn = NULL) {
+pivot_wider.data.frame <- function(
+  data,
+  ...,
+  id_cols = NULL,
+  id_expand = FALSE,
+  names_from = name,
+  names_prefix = "",
+  names_sep = "_",
+  names_glue = NULL,
+  names_sort = FALSE,
+  names_vary = "fastest",
+  names_expand = FALSE,
+  names_repair = "check_unique",
+  values_from = value,
+  values_fill = NULL,
+  values_fn = NULL,
+  unused_fn = NULL
+) {
   names_from <- enquo(names_from)
   values_from <- enquo(values_from)
 
@@ -265,15 +269,15 @@ pivot_wider.data.frame <- function(data,
 #' # See vignette("pivot") for examples and explanation
 #'
 #' us_rent_income
-#' spec1 <- us_rent_income %>%
+#' spec1 <- us_rent_income |>
 #'   build_wider_spec(names_from = variable, values_from = c(estimate, moe))
 #' spec1
 #'
-#' us_rent_income %>%
+#' us_rent_income |>
 #'   pivot_wider_spec(spec1)
 #'
 #' # Is equivalent to
-#' us_rent_income %>%
+#' us_rent_income |>
 #'   pivot_wider(names_from = variable, values_from = c(estimate, moe))
 #'
 #' # `pivot_wider_spec()` provides more control over column names and output format
@@ -285,19 +289,22 @@ pivot_wider.data.frame <- function(data,
 #'   variable = c("income", "rent", "income", "rent")
 #' )
 #'
-#' us_rent_income %>%
+#' us_rent_income |>
 #'   pivot_wider_spec(spec2)
-pivot_wider_spec <- function(data,
-                             spec,
-                             ...,
-                             names_repair = "check_unique",
-                             id_cols = NULL,
-                             id_expand = FALSE,
-                             values_fill = NULL,
-                             values_fn = NULL,
-                             unused_fn = NULL,
-                             error_call = current_env()) {
+pivot_wider_spec <- function(
+  data,
+  spec,
+  ...,
+  names_repair = "check_unique",
+  id_cols = NULL,
+  id_expand = FALSE,
+  values_fill = NULL,
+  values_fn = NULL,
+  unused_fn = NULL,
+  error_call = current_env()
+) {
   check_dots_empty0(...)
+  check_data_frame(data, call = error_call)
 
   spec <- check_pivot_spec(spec, call = error_call)
   check_bool(id_expand, call = error_call)
@@ -313,10 +320,21 @@ pivot_wider_spec <- function(data,
     error_call = error_call
   )
 
-  values_fn <- check_list_of_functions(values_fn, values_from_cols, call = error_call)
+  values_fn <- check_list_of_functions(
+    values_fn,
+    values_from_cols,
+    call = error_call
+  )
 
-  unused_cols <- setdiff(names(data), c(id_cols, names_from_cols, values_from_cols))
-  unused_fn <- check_list_of_functions(unused_fn, unused_cols, call = error_call)
+  unused_cols <- setdiff(
+    names(data),
+    c(id_cols, names_from_cols, values_from_cols)
+  )
+  unused_fn <- check_list_of_functions(
+    unused_fn,
+    unused_cols,
+    call = error_call
+  )
   unused_cols <- names(unused_fn)
 
   if (is.null(values_fill)) {
@@ -336,10 +354,20 @@ pivot_wider_spec <- function(data,
   # zero cols are selected. Also want to avoid the grouped-df behavior
   # of `complete()`.
   data <- as_tibble(data)
-  data <- data[vec_unique(c(id_cols, names_from_cols, values_from_cols, unused_cols))]
+  data <- data[vec_unique(c(
+    id_cols,
+    names_from_cols,
+    values_from_cols,
+    unused_cols
+  ))]
 
   if (id_expand) {
-    data <- complete(data, !!!syms(id_cols), fill = values_fill, explicit = FALSE)
+    data <- complete(
+      data,
+      !!!syms(id_cols),
+      fill = values_fill,
+      explicit = FALSE
+    )
   }
 
   # Figure out rows in output
@@ -430,7 +458,11 @@ pivot_wider_spec <- function(data,
 
   if (length(duplicate_names) > 0L) {
     duplicate_names <- glue::backtick(duplicate_names)
-    duplicate_names <- glue::glue_collapse(duplicate_names, sep = ", ", last = " and ")
+    duplicate_names <- glue::glue_collapse(
+      duplicate_names,
+      sep = ", ",
+      last = " and "
+    )
 
     group_cols <- c(id_cols, names_from_cols)
     group_cols <- backtick_if_not_syntactic(group_cols)
@@ -467,17 +499,19 @@ pivot_wider_spec <- function(data,
 #' @export
 #' @rdname pivot_wider_spec
 #' @inheritParams pivot_wider
-build_wider_spec <- function(data,
-                             ...,
-                             names_from = name,
-                             values_from = value,
-                             names_prefix = "",
-                             names_sep = "_",
-                             names_glue = NULL,
-                             names_sort = FALSE,
-                             names_vary = "fastest",
-                             names_expand = FALSE,
-                             error_call = current_env()) {
+build_wider_spec <- function(
+  data,
+  ...,
+  names_from = name,
+  values_from = value,
+  names_prefix = "",
+  names_sep = "_",
+  names_glue = NULL,
+  names_sort = FALSE,
+  names_vary = "fastest",
+  names_expand = FALSE,
+  error_call = current_env()
+) {
   check_dots_empty0(...)
 
   names_from <- tidyselect::eval_select(
@@ -552,11 +586,13 @@ build_wider_spec <- function(data,
   out
 }
 
-build_wider_id_cols_expr <- function(data,
-                                     id_cols = NULL,
-                                     names_from = name,
-                                     values_from = value,
-                                     error_call = caller_env()) {
+build_wider_id_cols_expr <- function(
+  data,
+  id_cols = NULL,
+  names_from = name,
+  values_from = value,
+  error_call = caller_env()
+) {
   names_from <- tidyselect::eval_select(
     enquo(names_from),
     data,
@@ -582,11 +618,13 @@ build_wider_id_cols_expr <- function(data,
   expr(c(!!!out))
 }
 
-select_wider_id_cols <- function(data,
-                                 id_cols = NULL,
-                                 names_from_cols = character(),
-                                 values_from_cols = character(),
-                                 error_call = caller_env()) {
+select_wider_id_cols <- function(
+  data,
+  id_cols = NULL,
+  names_from_cols = character(),
+  values_from_cols = character(),
+  error_call = caller_env()
+) {
   id_cols <- enquo(id_cols)
 
   # Remove known non-id-cols so they are never selected
@@ -615,16 +653,17 @@ select_wider_id_cols <- function(data,
 rethrow_id_cols_oob <- function(cnd, names_from_cols, values_from_cols, call) {
   i <- cnd[["i"]]
 
-  check_string(i, .internal = TRUE)
-
-  if (i %in% names_from_cols) {
-    stop_id_cols_oob(i, "names_from", call = call)
-  } else if (i %in% values_from_cols) {
-    stop_id_cols_oob(i, "values_from", call = call)
-  } else {
-    # Zap this special handler, throw the normal condition
-    zap()
+  if (is_string(i)) {
+    # Try to throw our custom error
+    if (i %in% names_from_cols) {
+      stop_id_cols_oob(i, "names_from", call = call)
+    } else if (i %in% values_from_cols) {
+      stop_id_cols_oob(i, "values_from", call = call)
+    }
   }
+
+  # Otherwise fall through and throw standard tidyselect error
+  zap()
 }
 
 stop_id_cols_oob <- function(i, arg, call) {
@@ -638,11 +677,13 @@ stop_id_cols_oob <- function(i, arg, call) {
   )
 }
 
-compat_id_cols <- function(id_cols,
-                           ...,
-                           fn_call,
-                           error_call = caller_env(),
-                           user_env = caller_env(2)) {
+compat_id_cols <- function(
+  id_cols,
+  ...,
+  fn_call,
+  error_call = caller_env(),
+  user_env = caller_env(2)
+) {
   dots <- enquos(...)
 
   # If `id_cols` is specified by name by the user, it will show up in the call.
@@ -686,7 +727,14 @@ warn_deprecated_unnamed_id_cols <- function(id_cols, user_env = caller_env(2)) {
 
 # Helpers -----------------------------------------------------------------
 
-value_summarize <- function(value, value_locs, value_name, fn, fn_name, error_call = caller_env()) {
+value_summarize <- function(
+  value,
+  value_locs,
+  value_name,
+  fn,
+  fn_name,
+  error_call = caller_env()
+) {
   value <- vec_chop(value, value_locs)
 
   if (identical(fn, list)) {

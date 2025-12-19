@@ -2,7 +2,7 @@
 
 test_that("can chop multiple columns", {
   df <- tibble(x = c(1, 1, 2), a = 1:3, b = 1:3)
-  out <- df %>% chop(c(a, b))
+  out <- df |> chop(c(a, b))
 
   expect_named(out, c("x", "a", "b"))
   expect_equal(out$a, list_of(1:2, 3L))
@@ -16,7 +16,7 @@ test_that("chopping no columns returns input", {
 
 test_that("grouping is preserved", {
   df <- tibble(g = c(1, 1), x = 1:2)
-  out <- df %>% dplyr::group_by(g) %>% chop(x)
+  out <- df |> dplyr::group_by(g) |> chop(x)
   expect_equal(dplyr::group_vars(out), "g")
 })
 
@@ -24,6 +24,8 @@ test_that("chop() validates its input `cols` (#1205)", {
   df <- tibble(x = 1:2)
   expect_snapshot(error = TRUE, {
     chop(df$x)
+  })
+  expect_snapshot(error = TRUE, {
     chop(df)
   })
 })
@@ -49,14 +51,14 @@ test_that("can chop empty data frame (#1206)", {
 
 test_that("extends into rows", {
   df <- tibble(x = 1:2, y = list(NULL, 1:4))
-  out <- df %>% unchop(y)
+  out <- df |> unchop(y)
   expect_equal(out$x, rep(2, 4))
   expect_equal(out$y, 1:4)
 })
 
 test_that("can unchop multiple cols", {
   df <- tibble(x = 1:2, y = list(1, 2:3), z = list(4, 5:6))
-  out <- df %>% unchop(c(y, z))
+  out <- df |> unchop(c(y, z))
   expect_equal(out$x, c(1, 2, 2))
   expect_equal(out$y, 1:3)
   expect_equal(out$z, 4:6)
@@ -73,8 +75,12 @@ test_that("unchopping vectors is a no-op", {
 })
 
 test_that("NULL inputs are automatically dropped", {
-  df <- tibble(x = 1:4, y = list(NULL, 1:2, 4, NULL), z = list(NULL, 1:2, NULL, 5))
-  out <- df %>% unchop(c(y, z))
+  df <- tibble(
+    x = 1:4,
+    y = list(NULL, 1:2, 4, NULL),
+    z = list(NULL, 1:2, NULL, 5)
+  )
+  out <- df |> unchop(c(y, z))
 
   expect_equal(out$x, c(2, 2, 3, 4))
   expect_equal(out$y, c(1, 2, 4, NA))
@@ -96,12 +102,16 @@ test_that("empty typed inputs are automatically dropped", {
 })
 
 test_that("optionally keep empty rows", {
-  df <- tibble(x = 1:2, y = list(NULL, 1:2), z = list(tibble(x = integer()), tibble(x = 1:2)))
-  out <- df %>% unchop(y, keep_empty = TRUE)
+  df <- tibble(
+    x = 1:2,
+    y = list(NULL, 1:2),
+    z = list(tibble(x = integer()), tibble(x = 1:2))
+  )
+  out <- df |> unchop(y, keep_empty = TRUE)
   expect_equal(out$x, c(1, 2, 2))
   expect_equal(out$y, c(NA, 1, 2))
 
-  out <- df %>% unchop(z, keep_empty = TRUE)
+  out <- df |> unchop(z, keep_empty = TRUE)
   expect_equal(out$x, c(1, 2, 2))
   expect_equal(out$z, tibble(x = c(NA, 1L, 2L)))
 })
@@ -113,24 +123,30 @@ test_that("mixing vectors with lists prevents NULLs from being dropped", {
 
 test_that("preserves columns of empty inputs", {
   df <- tibble(x = integer(), y = list(), z = list())
-  expect_named(df %>% unchop(y), c("x", "y", "z"))
-  expect_named(df %>% unchop(c(y, z)), c("x", "y", "z"))
+  expect_named(df |> unchop(y), c("x", "y", "z"))
+  expect_named(df |> unchop(c(y, z)), c("x", "y", "z"))
 })
 
 test_that("respects list_of types", {
   df <- tibble(x = integer(), y = list_of(.ptype = integer()))
 
   expect_equal(unchop(df, y), tibble(x = integer(), y = integer()))
-  expect_equal(unchop(df, y, keep_empty = TRUE), tibble(x = integer(), y = integer()))
+  expect_equal(
+    unchop(df, y, keep_empty = TRUE),
+    tibble(x = integer(), y = integer())
+  )
 
   df <- tibble(x = 1L, y = list_of(NULL, .ptype = integer()))
   expect_equal(unchop(df, y), tibble(x = integer(), y = integer()))
-  expect_equal(unchop(df, y, keep_empty = TRUE), tibble(x = 1L, y = NA_integer_))
+  expect_equal(
+    unchop(df, y, keep_empty = TRUE),
+    tibble(x = 1L, y = NA_integer_)
+  )
 })
 
 test_that("grouping is preserved", {
   df <- tibble(g = 1, x = list(1, 2))
-  out <- df %>% dplyr::group_by(g) %>% unchop(x)
+  out <- df |> dplyr::group_by(g) |> unchop(x)
   expect_equal(dplyr::group_vars(out), "g")
 })
 
@@ -228,6 +244,14 @@ test_that("`ptype = list()` uses list ptype", {
   )
 })
 
+test_that("incompatible ptype mentions the column (#1477)", {
+  df <- tibble(data = list(1, "2"))
+
+  expect_snapshot(error = TRUE, {
+    unnest(df, data, ptype = list(data = integer()))
+  })
+})
+
 test_that("unchopping a bare empty list results in unspecified()", {
   df <- tibble(x = integer(), y = list())
   expect <- tibble(x = integer(), y = unspecified())
@@ -280,15 +304,15 @@ test_that("unchop works with record columns (treating them like vectors)", {
 
 test_that("incompatible sizes are caught", {
   df <- tibble(x = list(1:2), y = list(1:3))
-  expect_snapshot((expect_error(unchop(df, c(x, y)))))
+  expect_snapshot(unchop(df, c(x, y)), error = TRUE)
 })
 
 test_that("empty typed inputs are considered in common size, but NULLs aren't", {
   df <- tibble(x = list(NULL), y = list(1:2))
-  expect_error(unchop(df, c(x, y)), NA)
+  expect_no_error(unchop(df, c(x, y)))
 
   df <- tibble(x = list(integer()), y = list(1:2))
-  expect_snapshot((expect_error(unchop(df, c(x, y)))))
+  expect_snapshot(unchop(df, c(x, y)), error = TRUE)
 })
 
 test_that("unchopping retains inner names from tibble elements", {
@@ -349,8 +373,14 @@ test_that("unchop validates its inputs", {
 
   expect_snapshot(error = TRUE, {
     unchop(1:10)
+  })
+  expect_snapshot(error = TRUE, {
     unchop(df)
+  })
+  expect_snapshot(error = TRUE, {
     unchop(df, col, keep_empty = 1)
+  })
+  expect_snapshot(error = TRUE, {
     unchop(df, col, ptype = 1)
   })
 })

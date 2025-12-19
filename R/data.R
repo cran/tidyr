@@ -152,7 +152,7 @@
 #'     income range in column name}
 #' }
 #' @source
-#' Downloaded from <https://www.pewresearch.org/religion/religious-landscape-study/>
+#' Downloaded from <https://www.pewresearch.org/religious-landscape-study/database/>
 #' (downloaded November 2009)
 "relig_income"
 
@@ -185,7 +185,6 @@
 #' (downloaded April 2008)
 "billboard"
 
-
 #' Household data
 #'
 #' This dataset is based on an example in
@@ -217,29 +216,29 @@
 #'   <https://data.cms.gov/provider-data/dataset/8c70-d353>
 #'
 #' @examples
-#' cms_patient_experience %>%
+#' cms_patient_experience |>
 #'   dplyr::distinct(measure_cd, measure_title)
 #'
-#' cms_patient_experience %>%
+#' cms_patient_experience |>
 #'   pivot_wider(
 #'     id_cols = starts_with("org"),
 #'     names_from = measure_cd,
 #'     values_from = prf_rate
 #'  )
 #'
-#' cms_patient_care %>%
+#' cms_patient_care |>
 #'   pivot_wider(
 #'     names_from = type,
 #'     values_from = score
 #'   )
 #'
-#' cms_patient_care %>%
+#' cms_patient_care |>
 #'   pivot_wider(
 #'     names_from = measure_abbr,
 #'     values_from = score
 #'   )
 #'
-#' cms_patient_care %>%
+#' cms_patient_care |>
 #'   pivot_wider(
 #'     names_from = c(measure_abbr, type),
 #'     values_from = score

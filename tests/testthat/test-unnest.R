@@ -1,9 +1,9 @@
 test_that("can keep empty rows", {
   df <- tibble(x = 1:3, y = list(NULL, tibble(), tibble(a = 1)))
-  out1 <- df %>% unnest(y)
+  out1 <- df |> unnest(y)
   expect_equal(nrow(out1), 1)
 
-  out2 <- df %>% unnest(y, keep_empty = TRUE)
+  out2 <- df |> unnest(y, keep_empty = TRUE)
   expect_equal(nrow(out2), 3)
   expect_equal(out2$a, c(NA, NA, 1))
 })
@@ -22,10 +22,10 @@ test_that("empty rows still affect output type", {
 
 test_that("bad inputs generate errors", {
   df <- tibble(x = 1, y = list(mean))
-  expect_snapshot((expect_error(unnest(df, y))))
+  expect_snapshot(unnest(df, y), error = TRUE)
 })
 
-test_that("unesting combines augmented vectors", {
+test_that("unnesting combines augmented vectors", {
   df <- tibble(x = as.list(as.factor(letters[1:3])))
   expect_equal(unnest(df, x)$x, factor(letters[1:3]))
 })
@@ -38,7 +38,7 @@ test_that("vector unnest preserves names", {
 
 test_that("rows and cols of nested-dfs are expanded", {
   df <- tibble(x = 1:2, y = list(tibble(a = 1), tibble(b = 1:2)))
-  out <- df %>% unnest(y)
+  out <- df |> unnest(y)
 
   expect_named(out, c("x", "a", "b"))
   expect_equal(nrow(out), 3)
@@ -96,14 +96,14 @@ test_that("vectors become columns", {
 
 test_that("multiple columns must be same length", {
   df <- tibble(x = list(1:2), y = list(1:3))
-  expect_snapshot((expect_error(unnest(df, c(x, y)))))
+  expect_snapshot(unnest(df, c(x, y)), error = TRUE)
 
   df <- tibble(x = list(1:2), y = list(tibble(y = 1:3)))
-  expect_snapshot((expect_error(unnest(df, c(x, y)))))
+  expect_snapshot(unnest(df, c(x, y)), error = TRUE)
 })
 
 test_that("can use non-syntactic names", {
-  out <- tibble("foo bar" = list(1:2, 3)) %>% unnest(`foo bar`)
+  out <- tibble("foo bar" = list(1:2, 3)) |> unnest(`foo bar`)
   expect_named(out, "foo bar")
 })
 
@@ -114,7 +114,7 @@ test_that("unpacks df-cols (#1112)", {
 
 test_that("unnesting column of mixed vector / data frame input is an error", {
   df <- tibble(x = list(1, tibble(a = 1)))
-  expect_snapshot((expect_error(unnest(df, x))))
+  expect_snapshot(unnest(df, x), error = TRUE)
 })
 
 test_that("unnest() advises on outer / inner name duplication", {
@@ -172,16 +172,16 @@ test_that("unnest() works on foreign list types recognized by `vec_is_list()` (#
 test_that("rowwise_df becomes grouped_df", {
   skip_if_not_installed("dplyr", "0.8.99")
 
-  df <- tibble(g = 1, x = list(1:3)) %>% dplyr::rowwise(g)
-  rs <- df %>% unnest(x)
+  df <- tibble(g = 1, x = list(1:3)) |> dplyr::rowwise(g)
+  rs <- df |> unnest(x)
 
   expect_s3_class(rs, "grouped_df")
   expect_equal(dplyr::group_vars(rs), "g")
 })
 
 test_that("grouping is preserved", {
-  df <- tibble(g = 1, x = list(1:3)) %>% dplyr::group_by(g)
-  rs <- df %>% unnest(x)
+  df <- tibble(g = 1, x = list(1:3)) |> dplyr::group_by(g)
+  rs <- df |> unnest(x)
 
   expect_s3_class(rs, "grouped_df")
   expect_equal(dplyr::group_vars(rs), "g")
@@ -213,7 +213,7 @@ test_that("unnesting typed lists of NULLs retains ptype", {
   expect_identical(out, tibble(x = integer(), a = integer()))
 })
 
-test_that("ptype can be overriden manually (#1158)", {
+test_that("ptype can be overridden manually (#1158)", {
   df <- tibble(
     a = list("a", c("b", "c")),
     b = list(1, c(2, 3)),
@@ -249,7 +249,7 @@ test_that("skips over vector columns", {
 
 test_that("unnest keeps list cols", {
   df <- tibble(x = 1:2, y = list(3, 4), z = list(5, 6:7))
-  out <- df %>% unnest(y)
+  out <- df |> unnest(y)
 
   expect_equal(names(out), c("x", "y", "z"))
 })
@@ -269,13 +269,13 @@ test_that("need supply column names", {
 test_that("sep combines column names", {
   local_options(lifecycle_verbosity = "warning")
   df <- tibble(x = list(tibble(x = 1)), y = list(tibble(x = 1)))
-  expect_snapshot(out <- df %>% unnest(c(x, y), .sep = "_"))
+  expect_snapshot(out <- df |> unnest(c(x, y), .sep = "_"))
   expect_named(out, c("x_x", "y_x"))
 })
 
 test_that("unnest has mutate semantics", {
   df <- tibble(x = 1:3, y = list(1, 2:3, 4))
-  expect_snapshot(out <- df %>% unnest(z = map(y, `+`, 1)))
+  expect_snapshot(out <- df |> unnest(z = map(y, `+`, 1)))
   expect_equal(out$z, 2:5)
 })
 
@@ -283,10 +283,10 @@ test_that(".drop and .preserve are deprecated", {
   local_options(lifecycle_verbosity = "warning")
 
   df <- tibble(x = list(3, 4), y = list("a", "b"))
-  expect_snapshot(df %>% unnest(x, .preserve = y))
+  expect_snapshot(df |> unnest(x, .preserve = y))
 
   df <- tibble(x = list(3, 4), y = list("a", "b"))
-  expect_snapshot(df %>% unnest(x, .drop = FALSE))
+  expect_snapshot(df |> unnest(x, .drop = FALSE))
 })
 
 test_that(".id creates vector of names for vector unnest", {

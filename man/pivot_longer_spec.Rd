@@ -66,7 +66,7 @@ de-duplicated by adding numeric suffixes. See \code{\link[vctrs:vec_as_names]{vc
 for more options.}
 
 \item{values_drop_na}{If \code{TRUE}, will drop rows that contain only \code{NA}s
-in the \code{value_to} column. This effectively converts explicit missing values
+in the \code{values_to} column. This effectively converts explicit missing values
 to implicit missing values, and should generally be used only when missing
 values in \code{data} were created by its structure.}
 
@@ -148,7 +148,7 @@ that allows you to describe pivoting with a data frame.
 
 # Use `build_longer_spec()` to build `spec` using similar syntax to `pivot_longer()`
 # and run `pivot_longer_spec()` based on `spec`.
-spec <- relig_income \%>\% build_longer_spec(
+spec <- relig_income |> build_longer_spec(
   cols = !religion,
   names_to = "income",
   values_to = "count"
@@ -158,7 +158,7 @@ spec
 pivot_longer_spec(relig_income, spec)
 
 # Is equivalent to:
-relig_income \%>\% pivot_longer(
+relig_income |> pivot_longer(
   cols = !religion,
   names_to = "income",
   values_to = "count"

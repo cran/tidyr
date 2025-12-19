@@ -59,8 +59,14 @@ test_that("expand will expand within each group (#396)", {
 
   out <- nest(out, data = -g)
 
-  expect_identical(out$data[[1]], crossing(a = 1:2, b = factor(levels = c("a", "b", "c"))))
-  expect_identical(out$data[[2]], crossing(a = 1L, b = factor(levels = c("a", "b", "c"))))
+  expect_identical(
+    out$data[[1]],
+    crossing(a = 1:2, b = factor(levels = c("a", "b", "c")))
+  )
+  expect_identical(
+    out$data[[2]],
+    crossing(a = 1L, b = factor(levels = c("a", "b", "c")))
+  )
 })
 
 test_that("expand does not allow expansion on grouping variable (#1299)", {
@@ -174,7 +180,7 @@ test_that("expand() retains `NA` data in factors (#1275)", {
 # ------------------------------------------------------------------------------
 
 test_that("crossing checks for bad inputs", {
-  expect_snapshot((expect_error(crossing(x = 1:10, y = quote(a)))))
+  expect_snapshot(crossing(x = 1:10, y = quote(a)), error = TRUE)
 })
 
 test_that("preserves NAs", {
@@ -210,7 +216,7 @@ test_that("expand() respects `.name_repair`", {
   df <- tibble(x)
 
   expect_snapshot(
-    out <- df %>% expand(x = x, x = x, .name_repair = "unique")
+    out <- df |> expand(x = x, x = x, .name_repair = "unique")
   )
   expect_named(out, c("x...1", "x...2"))
 })
@@ -320,7 +326,7 @@ test_that("crossing() / nesting() retain `NA` data in factors (#1275)", {
 test_that("expand_grid() can control name_repair", {
   x <- 1:2
 
-  expect_snapshot((expect_error(expand_grid(x = x, x = x))))
+  expect_snapshot(expand_grid(x = x, x = x), error = TRUE)
 
   expect_snapshot(
     out <- expand_grid(x = x, x = x, .name_repair = "unique")
@@ -350,7 +356,11 @@ test_that("unnamed data frames are flattened", {
 
   expect_identical(
     expand_grid(df, col),
-    tibble(x = c(1L, 1L, 2L, 2L), y = c(1L, 1L, 2L, 2L), col = c(3L, 4L, 3L, 4L))
+    tibble(
+      x = c(1L, 1L, 2L, 2L),
+      y = c(1L, 1L, 2L, 2L),
+      col = c(3L, 4L, 3L, 4L)
+    )
   )
 })
 
@@ -371,8 +381,14 @@ test_that("expand_grid() works with unnamed inlined tibbles with long expression
   )
 
   expect <- vec_cbind(
-    vec_slice(tibble(fruit = c("Apple", "Banana"), fruit_id = c("a", "b")), c(1, 1, 2, 2)),
-    vec_slice(tibble(status_id = c("c", "d"), status = c("cut_neatly", "devoured")), c(1, 2, 1, 2))
+    vec_slice(
+      tibble(fruit = c("Apple", "Banana"), fruit_id = c("a", "b")),
+      c(1, 1, 2, 2)
+    ),
+    vec_slice(
+      tibble(status_id = c("c", "d"), status = c("cut_neatly", "devoured")),
+      c(1, 2, 1, 2)
+    )
   )
 
   expect_identical(df, expect)
@@ -388,6 +404,32 @@ test_that("expand_grid() works with 0 row tibbles", {
   df <- tibble(.rows = 0)
   expect_identical(expand_grid(df), df)
   expect_identical(expand_grid(df, x = 1:2), tibble(x = integer()))
+})
+
+test_that("expand_grid() respects `.vary` parameter", {
+  # Slowest
+  expect_identical(
+    expand_grid(x = 1:2, y = 1:2),
+    tibble(
+      x = c(1L, 1L, 2L, 2L),
+      y = c(1L, 2L, 1L, 2L)
+    )
+  )
+
+  # Fastest
+  expect_identical(
+    expand_grid(x = 1:2, y = 1:2, .vary = "fastest"),
+    tibble(
+      x = c(1L, 2L, 1L, 2L),
+      y = c(1L, 1L, 2L, 2L)
+    )
+  )
+})
+
+test_that("expand_grid() throws an error for invalid `.vary` parameter", {
+  expect_snapshot(error = TRUE, {
+    expand_grid(x = 1:2, y = 1:2, .vary = "invalid")
+  })
 })
 
 # ------------------------------------------------------------------------------
@@ -434,7 +476,7 @@ test_that("grid_dots() drops `NULL`s", {
 })
 
 test_that("grid_dots() reject non-vector input", {
-  expect_snapshot((expect_error(grid_dots(lm(1 ~ 1)))))
+  expect_snapshot(grid_dots(lm(1 ~ 1)), error = TRUE)
 })
 
 # ------------------------------------------------------------------------------

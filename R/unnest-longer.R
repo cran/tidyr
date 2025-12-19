@@ -42,18 +42,18 @@
 #'   x = 1:4,
 #'   y = list(NULL, 1:3, 4:5, integer())
 #' )
-#' df %>% unnest_longer(y)
+#' df |> unnest_longer(y)
 #'
 #' # Note that empty values like `NULL` and `integer()` are dropped by
 #' # default. If you'd like to keep them, set `keep_empty = TRUE`.
-#' df %>% unnest_longer(y, keep_empty = TRUE)
+#' df |> unnest_longer(y, keep_empty = TRUE)
 #'
 #' # If the inner vectors are named, the names are copied to an `_id` column
 #' df <- tibble(
 #'   x = 1:2,
 #'   y = list(c(a = 1, b = 2), c(a = 10, b = 11, c = 12))
 #' )
-#' df %>% unnest_longer(y)
+#' df |> unnest_longer(y)
 #'
 #' # Multiple columns ----------------------------------------------------------
 #' # If columns are aligned, you can unnest simultaneously
@@ -62,25 +62,26 @@
 #'   y = list(1:2, 3:4),
 #'   z = list(5:6, 7:8)
 #' )
-#' df %>%
+#' df |>
 #'   unnest_longer(c(y, z))
 #'
 #' # This is important because sequential unnesting would generate the
 #' # Cartesian product of the rows
-#' df %>%
-#'   unnest_longer(y) %>%
+#' df |>
+#'   unnest_longer(y) |>
 #'   unnest_longer(z)
-unnest_longer <- function(data,
-                          col,
-                          values_to = NULL,
-                          indices_to = NULL,
-                          indices_include = NULL,
-                          keep_empty = FALSE,
-                          names_repair = "check_unique",
-                          simplify = TRUE,
-                          ptype = NULL,
-                          transform = NULL) {
-
+unnest_longer <- function(
+  data,
+  col,
+  values_to = NULL,
+  indices_to = NULL,
+  indices_include = NULL,
+  keep_empty = FALSE,
+  names_repair = "check_unique",
+  simplify = TRUE,
+  ptype = NULL,
+  transform = NULL
+) {
   check_data_frame(data)
   check_required(col)
   check_name(values_to, allow_null = TRUE)
@@ -151,13 +152,15 @@ unnest_longer <- function(data,
 }
 
 # Converts a column of any type to a `list_of<tbl>`
-col_to_long <- function(col,
-                        name,
-                        values_to,
-                        indices_to,
-                        indices_include,
-                        keep_empty,
-                        error_call = caller_env()) {
+col_to_long <- function(
+  col,
+  name,
+  values_to,
+  indices_to,
+  indices_include,
+  keep_empty,
+  error_call = caller_env()
+) {
   if (vec_is_list(col)) {
     ptype <- list_of_ptype(col)
   } else {
@@ -203,11 +206,24 @@ col_to_long <- function(col,
   }
 
   if (indices_include) {
-    names <- c(values_to, indices_to)
-    ptype <- new_long_indexed_frame(ptype, index_ptype, 0L, names)
+    ptype <- new_long_indexed_frame(
+      x = ptype,
+      index = index_ptype,
+      size = 0L,
+      indices_to = indices_to,
+      values_to = values_to
+    )
     col <- pmap(
       list(col, indices, sizes),
-      function(elt, index, size) new_long_indexed_frame(elt, index, size, names)
+      function(elt, index, size) {
+        new_long_indexed_frame(
+          x = elt,
+          index = index,
+          size = size,
+          indices_to = indices_to,
+          values_to = values_to
+        )
+      }
     )
   } else {
     name <- values_to
@@ -232,9 +248,9 @@ new_long_frame <- function(x, size, name) {
   names(out) <- name
   new_data_frame(out, n = size)
 }
-new_long_indexed_frame <- function(x, index, size, names) {
-  out <- list(x, index)
-  names(out) <- names
+new_long_indexed_frame <- function(x, index, size, indices_to, values_to) {
+  out <- list(index, x)
+  names(out) <- c(indices_to, values_to)
   new_data_frame(out, n = size)
 }
 
@@ -293,4 +309,3 @@ glue_col_names <- function(string, col_names) {
   out <- as.character(out)
   out
 }
-

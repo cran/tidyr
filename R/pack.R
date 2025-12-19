@@ -39,13 +39,13 @@
 #' # since few functions work with this sort of data.
 #' df <- tibble(x1 = 1:3, x2 = 4:6, x3 = 7:9, y = 1:3)
 #' df
-#' df %>% pack(x = starts_with("x"))
-#' df %>% pack(x = c(x1, x2, x3), y = y)
+#' df |> pack(x = starts_with("x"))
+#' df |> pack(x = c(x1, x2, x3), y = y)
 #'
 #' # .names_sep allows you to strip off common prefixes; this
 #' # acts as a natural inverse to name_sep in unpack()
-#' iris %>%
-#'   as_tibble() %>%
+#' iris |>
+#'   as_tibble() |>
 #'   pack(
 #'     Sepal = starts_with("Sepal"),
 #'     Petal = starts_with("Petal"),
@@ -59,9 +59,9 @@
 #'   z = tibble(X = c("a", "b", "c"), Y = runif(3), Z = c(TRUE, FALSE, NA))
 #' )
 #' df
-#' df %>% unpack(y)
-#' df %>% unpack(c(y, z))
-#' df %>% unpack(c(y, z), names_sep = "_")
+#' df |> unpack(y)
+#' df |> unpack(c(y, z))
+#' df |> unpack(c(y, z), names_sep = "_")
 pack <- function(.data, ..., .names_sep = NULL, .error_call = current_env()) {
   check_data_frame(.data, call = .error_call)
   cols <- enquos(...)
@@ -116,12 +116,14 @@ pack <- function(.data, ..., .names_sep = NULL, .error_call = current_env()) {
 #'
 #'   See [vctrs::vec_as_names()] for more details on these terms and the
 #'   strategies used to enforce them.
-unpack <- function(data,
-                   cols,
-                   ...,
-                   names_sep = NULL,
-                   names_repair = "check_unique",
-                   error_call = current_env()) {
+unpack <- function(
+  data,
+  cols,
+  ...,
+  names_sep = NULL,
+  names_repair = "check_unique",
+  error_call = current_env()
+) {
   check_dots_empty0(...)
   check_data_frame(data, call = error_call)
   check_required(cols, call = error_call)
@@ -268,7 +270,11 @@ strip_names <- function(df, base, names_sep) {
   names <- names(df)
 
   has_prefix <- regexpr(base, names, fixed = TRUE) == 1L
-  names[has_prefix] <- substr(names[has_prefix], nchar(base) + 1, nchar(names[has_prefix]))
+  names[has_prefix] <- substr(
+    names[has_prefix],
+    nchar(base) + 1,
+    nchar(names[has_prefix])
+  )
 
   set_names(df, names)
 }

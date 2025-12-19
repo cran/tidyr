@@ -47,24 +47,24 @@
 #' df <- tibble(x = c(1, 1, 1, 2, 2, 3), y = 1:6, z = 6:1)
 #' # Note that we get one row of output for each unique combination of
 #' # non-chopped variables
-#' df %>% chop(c(y, z))
+#' df |> chop(c(y, z))
 #' # cf nest
-#' df %>% nest(data = c(y, z))
+#' df |> nest(data = c(y, z))
 #'
 #' # Unchop --------------------------------------------------------------------
 #' df <- tibble(x = 1:4, y = list(integer(), 1L, 1:2, 1:3))
-#' df %>% unchop(y)
-#' df %>% unchop(y, keep_empty = TRUE)
+#' df |> unchop(y)
+#' df |> unchop(y, keep_empty = TRUE)
 #'
 #' # unchop will error if the types are not compatible:
 #' df <- tibble(x = 1:2, y = list("1", 1:3))
-#' try(df %>% unchop(y))
+#' try(df |> unchop(y))
 #'
 #' # Unchopping a list-col of data frames must generate a df-col because
 #' # unchop leaves the column names unchanged
 #' df <- tibble(x = 1:3, y = list(NULL, tibble(x = 1), tibble(y = 1:2)))
-#' df %>% unchop(y)
-#' df %>% unchop(y, keep_empty = TRUE)
+#' df |> unchop(y)
+#' df |> unchop(y, keep_empty = TRUE)
 chop <- function(data, cols, ..., error_call = current_env()) {
   check_dots_empty0(...)
   check_data_frame(data, call = error_call)
@@ -105,12 +105,14 @@ col_chop <- function(x, indices) {
 
 #' @export
 #' @rdname chop
-unchop <- function(data,
-                   cols,
-                   ...,
-                   keep_empty = FALSE,
-                   ptype = NULL,
-                   error_call = current_env()) {
+unchop <- function(
+  data,
+  cols,
+  ...,
+  keep_empty = FALSE,
+  ptype = NULL,
+  error_call = current_env()
+) {
   check_dots_empty0(...)
   check_data_frame(data, call = error_call)
   check_required(cols, call = error_call)
@@ -168,7 +170,13 @@ unchop <- function(data,
 #   used to slice the data frame `x` was subset from to align it with `val`.
 # - `val` the unchopped data frame.
 
-df_unchop <- function(x, ..., ptype = NULL, keep_empty = FALSE, error_call = caller_env()) {
+df_unchop <- function(
+  x,
+  ...,
+  ptype = NULL,
+  keep_empty = FALSE,
+  error_call = caller_env()
+) {
   check_dots_empty()
 
   ptype <- check_list_of_ptypes(ptype, names = names(x), call = error_call)
@@ -254,8 +262,14 @@ df_unchop <- function(x, ..., ptype = NULL, keep_empty = FALSE, error_call = cal
     col_sizes <- x_sizes[[i]]
 
     if (!col_is_list) {
+      # Optimize rare non list-cols
       if (!is_null(col_ptype)) {
-        col <- vec_cast(col, col_ptype, x_arg = col_name, call = error_call)
+        col <- vec_cast(
+          x = col,
+          to = col_ptype,
+          x_arg = col_name,
+          call = error_call
+        )
       }
       out_cols[[i]] <- vec_slice(col, out_loc)
       next
@@ -265,9 +279,19 @@ df_unchop <- function(x, ..., ptype = NULL, keep_empty = FALSE, error_call = cal
     col <- unname(col)
 
     row_recycle <- col_sizes != sizes
-    col[row_recycle] <- map2(col[row_recycle], sizes[row_recycle], vec_recycle, call = error_call)
+    col[row_recycle] <- map2(
+      col[row_recycle],
+      sizes[row_recycle],
+      vec_recycle,
+      call = error_call
+    )
 
-    col <- list_unchop(col, ptype = col_ptype)
+    col <- list_unchop(
+      x = col,
+      ptype = col_ptype,
+      error_arg = col_name,
+      error_call = error_call
+    )
 
     if (is_null(col)) {
       # This can happen when both of these are true:

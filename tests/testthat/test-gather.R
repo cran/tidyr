@@ -50,9 +50,9 @@ test_that("key preserves column ordering when factor_key = TRUE", {
 
 test_that("preserve class of input", {
   dat <- data.frame(x = 1:2)
-  dat %>%
-    as_tibble() %>%
-    gather() %>%
+  dat |>
+    as_tibble() |>
+    gather() |>
     expect_s3_class("tbl_df")
 })
 
@@ -67,14 +67,14 @@ test_that("group_vars are kept where possible", {
   df <- tibble(x = 1, y = 1, z = 1)
 
   # Can't keep
-  out <- df %>%
-    dplyr::group_by(x) %>%
+  out <- df |>
+    dplyr::group_by(x) |>
     gather(key, val, x:z)
   expect_equal(out, tibble(key = c("x", "y", "z"), val = 1))
 
   # Can keep
-  out <- df %>%
-    dplyr::group_by(x) %>%
+  out <- df |>
+    dplyr::group_by(x) |>
     gather(key, val, y:z)
   expect_equal(dplyr::group_vars(out), "x")
 })
@@ -124,9 +124,11 @@ test_that("gather throws error for POSIXlt", {
   df <- data.frame(y = 1)
   df$x <- as.POSIXlt(Sys.time())
 
-  expect_snapshot({
-    (expect_error(gather(df, key, val, -x)))
-    (expect_error(gather(df, key, val, -y)))
+  expect_snapshot(error = TRUE, {
+    gather(df, key, val, -x)
+  })
+  expect_snapshot(error = TRUE, {
+    gather(df, key, val, -y)
   })
 })
 
@@ -134,9 +136,10 @@ test_that("gather throws error for weird objects", {
   df <- data.frame(y = 1)
   df$x <- expression(x)
 
-  expect_snapshot({
-    (expect_error(gather(df, key, val, -x)))
-    (expect_error(gather(df, key, val, -y)))
+  # Can't use snapshot, it changes between versions of R
+  expect_error(gather(d, key, val, -x))
+  expect_snapshot(error = TRUE, {
+    gather(df, key, val, -y)
   })
 
   e <- new.env(parent = emptyenv())
@@ -144,12 +147,13 @@ test_that("gather throws error for weird objects", {
   df <- data.frame(y = 1)
   df$x <- e
 
-  expect_snapshot({
-    (expect_error(gather(df, key, val, -x)))
-    (expect_error(gather(df, key, val, -y)))
+  expect_snapshot(error = TRUE, {
+    gather(df, key, val, -x)
+  })
+  expect_snapshot(error = TRUE, {
+    gather(df, key, val, -y)
   })
 })
-
 
 test_that("factors coerced to characters, not integers", {
   df <- data.frame(
@@ -168,7 +172,6 @@ test_that("attributes of id variables are preserved", {
 
   expect_equal(attributes(df$x), attributes(out$x))
 })
-
 
 test_that("common attributes are preserved", {
   df <- data.frame(date1 = Sys.Date(), date2 = Sys.Date() + 10)

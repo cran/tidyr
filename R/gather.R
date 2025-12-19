@@ -6,8 +6,8 @@
 #' Development on `gather()` is complete, and for new code we recommend
 #' switching to `pivot_longer()`, which is easier to use, more featureful, and
 #' still under active development.
-#' `df %>% gather("key", "value", x, y, z)` is equivalent to
-#' `df %>% pivot_longer(c(x, y, z), names_to = "key", values_to = "value")`
+#' `df |> gather("key", "value", x, y, z)` is equivalent to
+#' `df |> pivot_longer(c(x, y, z), names_to = "key", values_to = "value")`
 #'
 #' See more details in `vignette("pivot")`.
 #'
@@ -69,7 +69,7 @@
 #' )
 #'
 #' gather(stocks, "stock", "price", -time)
-#' stocks %>% gather("stock", "price", -time)
+#' stocks |> gather("stock", "price", -time)
 #'
 #' # get first observation for each Species in iris data -- base R
 #' mini_iris <- iris[c(1, 51, 101), ]
@@ -78,15 +78,28 @@
 #'        Sepal.Length, Sepal.Width, Petal.Length, Petal.Width)
 #' # same result but less verbose
 #' gather(mini_iris, key = "flower_att", value = "measurement", -Species)
-gather <- function(data, key = "key", value = "value", ...,
-                   na.rm = FALSE, convert = FALSE, factor_key = FALSE) {
+gather <- function(
+  data,
+  key = "key",
+  value = "value",
+  ...,
+  na.rm = FALSE,
+  convert = FALSE,
+  factor_key = FALSE
+) {
   check_dots_unnamed()
   UseMethod("gather")
 }
 #' @export
-gather.data.frame <- function(data, key = "key", value = "value", ...,
-                              na.rm = FALSE, convert = FALSE,
-                              factor_key = FALSE) {
+gather.data.frame <- function(
+  data,
+  key = "key",
+  value = "value",
+  ...,
+  na.rm = FALSE,
+  convert = FALSE,
+  factor_key = FALSE
+) {
   key_var <- as_string(ensym(key))
   value_var <- as_string(ensym(value))
 

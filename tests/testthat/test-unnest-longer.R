@@ -1,36 +1,36 @@
 test_that("uses input for default column names", {
   df <- tibble(x = 1:2, y = list(1, 1:2))
-  out <- df %>% unnest_longer(y)
+  out <- df |> unnest_longer(y)
 
   expect_named(out, c("x", "y"))
 })
 
 test_that("can adjust the column name with `values_to`", {
   df <- tibble(x = 1:2, y = list(1, 1:2))
-  out <- df %>% unnest_longer(y, values_to = "y2")
+  out <- df |> unnest_longer(y, values_to = "y2")
 
   expect_named(out, c("x", "y2"))
 })
 
 test_that("automatically adds id col if named", {
   df <- tibble(x = 1:2, y = list(c(a = 1), c(b = 2)))
-  out <- df %>% unnest_longer(y)
+  out <- df |> unnest_longer(y)
 
-  expect_named(out, c("x", "y", "y_id"))
+  expect_named(out, c("x", "y_id", "y"))
 })
 
 test_that("can force integer indexes", {
   df <- tibble(x = 1:2, y = list(1, 2))
-  out <- df %>% unnest_longer(y, indices_include = TRUE)
-  expect_named(out, c("x", "y", "y_id"))
+  out <- df |> unnest_longer(y, indices_include = TRUE)
+  expect_named(out, c("x", "y_id", "y"))
 
-  out <- df %>% unnest_longer(y, indices_to = "y2")
-  expect_named(out, c("x", "y", "y2"))
+  out <- df |> unnest_longer(y, indices_to = "y2")
+  expect_named(out, c("x", "y2", "y"))
 })
 
 test_that("can handle data frames consistently with vectors", {
   df <- tibble(x = 1:2, y = list(tibble(a = 1:2, b = 2:3)))
-  out <- df %>% unnest_longer(y)
+  out <- df |> unnest_longer(y)
 
   expect_named(out, c("x", "y"))
   expect_equal(nrow(out), 4)
@@ -39,16 +39,14 @@ test_that("can handle data frames consistently with vectors", {
 test_that("can unnest dates", {
   x <- as.Date(c("2019-08-01", "2019-12-01"))
   df <- tibble(x = as.list(x))
-  out <- df %>% unnest_longer(x)
+  out <- df |> unnest_longer(x)
   expect_equal(out$x, x)
 })
 
 test_that("unnest_longer - bad inputs generate errors", {
   df <- tibble(x = 1, y = list(mean))
 
-  expect_snapshot((expect_error(
-    unnest_longer(df, y)
-  )))
+  expect_snapshot(unnest_longer(df, y), error = TRUE)
 })
 
 test_that("list_of columns can be unnested", {
@@ -60,7 +58,7 @@ test_that("list_of columns can be unnested", {
 
   # With id column
   df <- tibble(x = 1:2, y = list_of(c(a = 1L), c(b = 1:2)))
-  expect_named(unnest_longer(df, y), c("x", "y", "y_id"))
+  expect_named(unnest_longer(df, y), c("x", "y_id", "y"))
 })
 
 test_that("drops empty rows by default (#1363, #1339)", {
@@ -180,7 +178,7 @@ test_that("unnesting list of data frames utilizes `indices_include` (#1194)", {
 
   expect_identical(
     unnest_longer(df, x, indices_include = TRUE),
-    tibble(x = tibble(a = 1:4), x_id = c(1L, 2L, 1L, 2L))
+    tibble(x_id = c(1L, 2L, 1L, 2L), x = tibble(a = 1:4))
   )
 })
 
@@ -285,7 +283,7 @@ test_that("unnesting multiple columns uses independent indices", {
   out <- unnest_longer(df, c(a, b), keep_empty = TRUE)
 
   expect_identical(out$a_id, c("x", NA, NA))
-  expect_named(out, c("a", "a_id", "b"))
+  expect_named(out, c("a_id", "a", "b"))
 })
 
 test_that("unnesting multiple columns works with `indices_include = TRUE`", {
@@ -308,7 +306,7 @@ test_that("can use glue to name multiple `indices_to` cols", {
   df <- tibble(a = list(1, 2:3), b = list(1, 2:3))
   expect_named(
     unnest_longer(df, c(a, b), indices_to = "{col}_name"),
-    c("a", "a_name", "b", "b_name")
+    c("a_name", "a", "b_name", "b")
   )
 })
 
@@ -316,7 +314,7 @@ test_that("default `indices_to` is based on `values_to` (#1201)", {
   df <- tibble(a = list(c(x = 1), 2))
   expect_named(
     unnest_longer(df, a, values_to = "aa"),
-    c("aa", "aa_id")
+    c("aa_id", "aa")
   )
 })
 
@@ -338,7 +336,13 @@ test_that("names are preserved when simplification isn't done and a ptype is sup
   ptype <- list(x = integer())
 
   # Explicit request not to simplify
-  out <- unnest_longer(df, x, indices_include = TRUE, ptype = ptype, simplify = FALSE)
+  out <- unnest_longer(
+    df,
+    x,
+    indices_include = TRUE,
+    ptype = ptype,
+    simplify = FALSE
+  )
   expect_named(out$x, c("a", "b"))
   expect_identical(out$x_id, c("a", "b"))
 
@@ -359,28 +363,40 @@ test_that("works with foreign lists recognized by `vec_is_list()` (#1327)", {
   # With empty types
   df <- tibble(x = new_foo(1:2, integer()))
   expect_identical(unnest_longer(df, x), tibble(x = 1:2))
-  expect_identical(unnest_longer(df, x, keep_empty = TRUE), tibble(x = c(1:2, NA)))
+  expect_identical(
+    unnest_longer(df, x, keep_empty = TRUE),
+    tibble(x = c(1:2, NA))
+  )
 
   # With `NULL`s
   df <- tibble(x = new_foo(1:2, NULL))
   expect_identical(unnest_longer(df, x), tibble(x = 1:2))
-  expect_identical(unnest_longer(df, x, keep_empty = TRUE), tibble(x = c(1:2, NA)))
+  expect_identical(
+    unnest_longer(df, x, keep_empty = TRUE),
+    tibble(x = c(1:2, NA))
+  )
 })
 
 test_that("can't currently retain names when simplification isn't done and a ptype is supplied if there is a mix of named/unnamed elements (#1212)", {
   df <- tibble(x = list(list(a = 1L), list(1L)))
   ptype <- list(x = integer())
 
-  out <- unnest_longer(df, x, indices_include = TRUE, ptype = ptype, simplify = FALSE)
+  out <- unnest_longer(
+    df,
+    x,
+    indices_include = TRUE,
+    ptype = ptype,
+    simplify = FALSE
+  )
 
   expect_named(out$x, c("a", ""))
   expect_identical(out$x_id, c("a", ""))
 })
 
 test_that("can't mix `indices_to` with `indices_include = FALSE`", {
-  expect_snapshot((expect_error(
+  expect_snapshot(error = TRUE, {
     unnest_longer(mtcars, mpg, indices_to = "x", indices_include = FALSE)
-  )))
+  })
 })
 
 test_that("unnest_longer() validates its inputs", {
@@ -402,29 +418,29 @@ test_that("`values_to` and `indices_to` glue can't reach into surrounding env", 
 })
 
 test_that("`values_to` is validated", {
-  expect_snapshot({
-    (expect_error(unnest_longer(mtcars, mpg, values_to = 1)))
-    (expect_error(unnest_longer(mtcars, mpg, values_to = c("x", "y"))))
+  expect_snapshot(error = TRUE, {
+    unnest_longer(mtcars, mpg, values_to = 1)
+    unnest_longer(mtcars, mpg, values_to = c("x", "y"))
   })
 })
 
 test_that("`indices_to` is validated", {
-  expect_snapshot({
-    (expect_error(unnest_longer(mtcars, mpg, indices_to = 1)))
-    (expect_error(unnest_longer(mtcars, mpg, indices_to = c("x", "y"))))
+  expect_snapshot(error = TRUE, {
+    unnest_longer(mtcars, mpg, indices_to = 1)
+    unnest_longer(mtcars, mpg, indices_to = c("x", "y"))
   })
 })
 
 test_that("`indices_include` is validated", {
-  expect_snapshot({
-    (expect_error(unnest_longer(mtcars, mpg, indices_include = 1)))
-    (expect_error(unnest_longer(mtcars, mpg, indices_include = c(TRUE, FALSE))))
+  expect_snapshot(error = TRUE, {
+    unnest_longer(mtcars, mpg, indices_include = 1)
+    unnest_longer(mtcars, mpg, indices_include = c(TRUE, FALSE))
   })
 })
 
 test_that("`keep_empty` is validated", {
-  expect_snapshot({
-    (expect_error(unnest_longer(mtcars, mpg, keep_empty = 1)))
-    (expect_error(unnest_longer(mtcars, mpg, keep_empty = c(TRUE, FALSE))))
+  expect_snapshot(error = TRUE, {
+    unnest_longer(mtcars, mpg, keep_empty = 1)
+    unnest_longer(mtcars, mpg, keep_empty = c(TRUE, FALSE))
   })
 })

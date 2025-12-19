@@ -77,22 +77,22 @@ test_that("too few pieces dealt with as requested", {
 })
 
 test_that("preserves grouping", {
-  df <- tibble(g = 1, x = "a:b") %>% dplyr::group_by(g)
-  rs <- df %>% separate(x, c("a", "b"))
+  df <- tibble(g = 1, x = "a:b") |> dplyr::group_by(g)
+  rs <- df |> separate(x, c("a", "b"))
   expect_equal(class(df), class(rs))
   expect_equal(dplyr::group_vars(df), dplyr::group_vars(rs))
 })
 
 test_that("drops grouping when needed", {
-  df <- tibble(x = "a:b") %>% dplyr::group_by(x)
-  rs <- df %>% separate(x, c("a", "b"))
+  df <- tibble(x = "a:b") |> dplyr::group_by(x)
+  rs <- df |> separate(x, c("a", "b"))
   expect_equal(rs$a, "a")
   expect_equal(dplyr::group_vars(rs), character())
 })
 
 test_that("overwrites existing columns", {
   df <- tibble(x = "a:b")
-  rs <- df %>% separate(x, c("x", "y"))
+  rs <- df |> separate(x, c("x", "y"))
 
   expect_named(rs, c("x", "y"))
   expect_equal(rs$x, "a")
@@ -110,9 +110,17 @@ test_that("validates inputs", {
 
   expect_snapshot(error = TRUE, {
     separate(df)
+  })
+  expect_snapshot(error = TRUE, {
     separate(df, x, into = 1)
+  })
+  expect_snapshot(error = TRUE, {
     separate(df, x, into = "x", sep = c("a", "b"))
+  })
+  expect_snapshot(error = TRUE, {
     separate(df, x, into = "x", remove = 1)
+  })
+  expect_snapshot(error = TRUE, {
     separate(df, x, into = "x", convert = 1)
   })
 })
@@ -121,7 +129,7 @@ test_that("informative error if using stringr modifier functions (#693)", {
   df <- tibble(x = "a")
   sep <- structure("a", class = "pattern")
 
-  expect_snapshot((expect_error(separate(df, x, "x", sep = sep))))
+  expect_snapshot(separate(df, x, "x", sep = sep), error = TRUE)
 })
 
 # helpers -----------------------------------------------------------------

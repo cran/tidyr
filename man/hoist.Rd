@@ -89,7 +89,7 @@ df <- tibble(
 df
 
 # Extract only specified components
-df \%>\% hoist(metadata,
+df |> hoist(metadata,
   "species",
   first_film = list("films", 1L),
   third_film = list("films", 3L)
@@ -97,8 +97,8 @@ df \%>\% hoist(metadata,
 }
 \seealso{
 Other rectangling: 
+\code{\link{unnest}()},
 \code{\link{unnest_longer}()},
-\code{\link{unnest_wider}()},
-\code{\link{unnest}()}
+\code{\link{unnest_wider}()}
 }
 \concept{rectangling}
